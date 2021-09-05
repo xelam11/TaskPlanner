@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, PermissionsMixin
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
@@ -11,14 +11,13 @@ class CustomUser(AbstractUser):
                                  max_length=30,
                                  blank=True
                                  )
-    username = models.CharField('Username',
-                                max_length=30,
-                                unique=True,
-                                # default='user'+'f{user.id}'
-                                )
     bio = models.TextField('О себе',
                            blank=True
                            )
+    username = models.CharField('Username',
+                                max_length=30,
+                                unique=True,
+                                )
     email = models.EmailField('Адрес электронной почты',
                               unique=True
                               )

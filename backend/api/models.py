@@ -1,6 +1,5 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-from rest_framework import request
 
 from users.models import CustomUser
 
@@ -24,11 +23,6 @@ class Board(models.Model):
                                           blank=True,
                                           verbose_name='Участники',
                                           )
-    position = models.PositiveSmallIntegerField(
-        verbose_name='Номер позиции на доске',
-        default=1,
-        validators=[MinValueValidator(1), ]
-    )
 
     class Meta:
         verbose_name = 'Доска'

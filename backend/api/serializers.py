@@ -10,8 +10,7 @@ class BoardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = ('id', 'name', 'description', 'author',
-                  'participants', 'position')
+        fields = ('id', 'name', 'description', 'author', 'participants')
 
     def get_author(self, board):
         return CustomUserSerializer(board.author).data

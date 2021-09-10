@@ -10,7 +10,7 @@ class IsStaffOrAuthorOrAuthenticated(permissions.BasePermission):
         return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        if (request.method in ['PUT', 'PATCH', 'DELETE'] and
+        if (request.method in ['GET', 'PUT', 'PATCH', 'DELETE'] and
                 request.user.is_authenticated):
             return (request.user == obj.author or
                     request.user.is_superuser or

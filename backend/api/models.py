@@ -27,6 +27,7 @@ class Board(models.Model):
     class Meta:
         verbose_name = 'Доска'
         verbose_name_plural = 'Доски'
+        ordering = ['name']
 
     def __str__(self):
         return self.name

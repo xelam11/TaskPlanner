@@ -38,11 +38,6 @@ class Board(models.Model):
 #                             verbose_name='Название',
 #                             help_text='Напишите название',
 #                             )
-#     board = models.ForeignKey(Board,
-#                               on_delete=models.CASCADE,
-#                               related_name='lists',
-#                               verbose_name='Доска',
-#                               )
 #     position = models.PositiveSmallIntegerField(
 #         verbose_name='Номер позиции на доске',
 #         default=1,
@@ -78,50 +73,6 @@ class Board(models.Model):
 #         return self.name
 #
 #
-# class Card(models.Model):
-#     name = models.CharField(max_length=50,
-#                             verbose_name='Название',
-#                             help_text='Напишите название',
-#                             )
-#     description = models.TextField(verbose_name='Оисание',
-#                                    help_text='Напишите описание',
-#                                    )
-#     author = models.ForeignKey(CustomUser,
-#                                on_delete=models.CASCADE,
-#                                related_name='cards',
-#                                verbose_name='Автор',
-#                                )
-#     participants = models.ManyToManyField(CustomUser,
-#                                           related_name='cards',
-#                                           blank=True,
-#                                           verbose_name='Участники',
-#                                           )
-#     list = models.ForeignKey(List,
-#                              on_delete=models.CASCADE,
-#                              related_name='cards',
-#                              verbose_name='Список',
-#                              )
-#     tags = models.ManyToManyField(Tag,
-#                                   related_name='cards',
-#                                   blank=True,
-#                                   verbose_name='Тег',
-#                                   )
-#     files = models.FileField(upload_to='cards',
-#                              verbose_name='Файл',
-#                              help_text='Загрузите файл',
-#                              )
-#     position = models.PositiveSmallIntegerField(
-#         verbose_name='Номер позиции в листе',
-#         default=1,
-#         validators=[MinValueValidator(1), ]
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Карточка'
-#         verbose_name_plural = 'Карточки'
-#
-#     def __str__(self):
-#         return self.name
 #
 #
 # class Comment(models.Model):

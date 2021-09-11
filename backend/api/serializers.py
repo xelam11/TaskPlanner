@@ -14,3 +14,11 @@ class BoardSerializer(serializers.ModelSerializer):
 
     def get_author(self, board):
         return CustomUserSerializer(board.author).data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        participants_data = CustomUserSerializer(instance.participants.all(),
+                                                 many=True,
+                                                 read_only=True).data
+
+        return {**data, 'participants': participants_data}

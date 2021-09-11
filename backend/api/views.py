@@ -14,4 +14,8 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         current_user = self.request.user
+
+        if current_user.is_superuser or current_user.is_staff:
+            return Board.objects.all()
+
         return Board.objects.filter(author=current_user)

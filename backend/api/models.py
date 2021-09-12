@@ -12,7 +12,6 @@ class List(models.Model):
     position = models.PositiveSmallIntegerField(
         verbose_name='Номер позиции на доске',
         blank=True,
-        unique=True,
         validators=[MinValueValidator(1), ]
     )
 
@@ -51,6 +50,33 @@ class Board(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(CustomUser,
+                             on_delete=models.CASCADE,
+                             related_name='favorite_subscriber',
+                             verbose_name='Пользователь',
+                             )
+    board = models.ForeignKey(Board,
+                              on_delete=models.CASCADE,
+                              related_name='favorite_board',
+                              verbose_name='Доска',
+                              )
+    pub_date = models.DateTimeField(auto_now_add=True,
+                                    verbose_name='Дата добавления',
+                                    )
+
+    class Meta:
+        verbose_name = 'Избранный'
+        verbose_name_plural = 'Избранные'
+        constraints = [models.UniqueConstraint(
+            fields=['user', 'board'],
+            name='unique_favorites_boards')]
+
+    def __str__(self):
+        return (f'Пользователь: {self.user}, '
+                f'избранные доски: {self.board.name}')
 #
 #
 # class Tag(models.Model):

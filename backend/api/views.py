@@ -1,8 +1,17 @@
 from rest_framework import viewsets
 
-from .models import Board
+from .models import Board, List
 from .permissions import IsStaffOrAuthorOrAuthenticated
-from .serializers import BoardSerializer
+from .serializers import BoardSerializer, ListSerializer
+
+
+class ListViewSet(viewsets.ModelViewSet):
+    queryset = List.objects.all()
+    serializer_class = ListSerializer
+
+    def perform_create(self, serializer):
+        count_of_lists = List.objects.count()
+        serializer.save(position=count_of_lists + 1)
 
 
 class BoardViewSet(viewsets.ModelViewSet):

@@ -2,7 +2,14 @@ from rest_framework import serializers
 
 from users.serializers import CustomUserSerializer
 
-from .models import Board
+from .models import Board, List
+
+
+class ListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = List
+        fields = ('id', 'name', 'position')
 
 
 class BoardSerializer(serializers.ModelSerializer):

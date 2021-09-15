@@ -4,25 +4,6 @@ from django.db import models
 from users.models import CustomUser
 
 
-class List(models.Model):
-    name = models.CharField(max_length=50,
-                            verbose_name='Название',
-                            help_text='Напишите название',
-                            )
-    position = models.PositiveSmallIntegerField(
-        verbose_name='Номер позиции на доске',
-        blank=True,
-        validators=[MinValueValidator(1), ]
-    )
-
-    class Meta:
-        verbose_name = 'Список'
-        verbose_name_plural = 'Списки'
-
-    def __str__(self):
-        return self.name
-
-
 class Board(models.Model):
     name = models.CharField(max_length=50,
                             verbose_name='Название',
@@ -47,6 +28,30 @@ class Board(models.Model):
         verbose_name = 'Доска'
         verbose_name_plural = 'Доски'
         ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class List(models.Model):
+    name = models.CharField(max_length=50,
+                            verbose_name='Название',
+                            help_text='Напишите название',
+                            )
+    board = models.ForeignKey(Board,
+                              on_delete=models.CASCADE,
+                              related_name='lists',
+                              verbose_name='Доска',
+                              )
+    position = models.PositiveSmallIntegerField(
+        verbose_name='Номер позиции на доске',
+        blank=True,
+        validators=[MinValueValidator(1), ]
+    )
+
+    class Meta:
+        verbose_name = 'Список'
+        verbose_name_plural = 'Списки'
 
     def __str__(self):
         return self.name

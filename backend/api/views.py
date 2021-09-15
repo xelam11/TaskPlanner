@@ -11,15 +11,6 @@ from .permissions import IsStaffOrAuthorOrAuthenticated
 from .serializers import BoardSerializer, ListSerializer
 
 
-class ListViewSet(viewsets.ModelViewSet):
-    queryset = List.objects.all()
-    serializer_class = ListSerializer
-
-    def perform_create(self, serializer):
-        count_of_lists = List.objects.count()
-        serializer.save(position=count_of_lists + 1)
-
-
 class BoardViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrAuthorOrAuthenticated]
     filter_backends = [DjangoFilterBackend, ]
@@ -67,3 +58,17 @@ class BoardViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST)
 
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ListViewSet(viewsets.ModelViewSet):
+    serializer_class = ListSerializer
+
+    def perform_create(self, serializer):
+        board = get_object_or_404(Board, id=self.kwargs.get('board_id'))
+        count_of_lists = board.lists.count()
+        serializer.save(board=board,
+                        position=count_of_lists + 1)
+
+    def get_queryset(self):
+        board = get_object_or_404(Board, id=self.kwargs.get('board_id'))
+        return board.lists

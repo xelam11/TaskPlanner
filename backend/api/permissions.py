@@ -13,6 +13,7 @@ class IsStaffOrAuthorOrAuthenticated(permissions.BasePermission):
         if (request.method in ['GET', 'PUT', 'PATCH', 'DELETE'] and
                 request.user.is_authenticated):
             return (request.user == obj.author or
+                    request.user in obj.participants.all() or
                     request.user.is_superuser or
                     request.user.is_staff
                     )

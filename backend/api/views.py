@@ -1,8 +1,10 @@
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 
+from .filters import BoardFilter
 from .models import Board, List, Favorite
 from .permissions import IsStaffOrAuthorOrAuthenticated
 from .serializers import BoardSerializer, ListSerializer
@@ -18,8 +20,10 @@ class ListViewSet(viewsets.ModelViewSet):
 
 
 class BoardViewSet(viewsets.ModelViewSet):
-    serializer_class = BoardSerializer
     permission_classes = [IsStaffOrAuthorOrAuthenticated]
+    filter_backends = [DjangoFilterBackend, ]
+    filter_class = BoardFilter
+    serializer_class = BoardSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

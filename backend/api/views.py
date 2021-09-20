@@ -1,18 +1,18 @@
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.decorators import action
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from .filters import BoardFilter
-from .models import Board, List, Favorite
-from .permissions import IsStaffOrAuthorOrAuthenticated
+from .models import Board, Favorite
+from .permissions import IsAuthor, IsParticipant
 from .serializers import BoardSerializer, ListSerializer
 
 
 class BoardViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsStaffOrAuthorOrAuthenticated]
     filter_backends = [DjangoFilterBackend, ]
     filter_class = BoardFilter
     serializer_class = BoardSerializer
@@ -58,6 +58,18 @@ class BoardViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST)
 
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get_permissions(self):
+
+        if self.action == 'create':
+            return [(IsAdminUser | IsAuthenticated)()]
+
+        if self.action in ('list', 'retrieve', 'favorite'):
+            return [(IsAuthenticated &
+                     (IsAuthor | IsParticipant | IsAdminUser))()]
+
+        if self.action in ('update', 'partial_update', 'destroy'):
+            return [(IsAuthenticated & (IsAuthor | IsAdminUser))()]
 
 
 class ListViewSet(viewsets.ModelViewSet):

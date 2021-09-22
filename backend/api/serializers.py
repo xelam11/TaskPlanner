@@ -9,11 +9,12 @@ class BoardSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     is_favored = serializers.SerializerMethodField()
     is_author = serializers.SerializerMethodField()
+    is_participant = serializers.SerializerMethodField()
 
     class Meta:
         model = Board
         fields = ('id', 'name', 'description', 'author', 'is_favored',
-                  'is_author', 'participants')
+                  'is_author', 'is_participant', 'participants')
 
     def get_author(self, board):
         return CustomUserSerializer(board.author).data
@@ -34,6 +35,15 @@ class BoardSerializer(serializers.ModelSerializer):
             return False
 
         return bool(board.author == user)
+
+    def get_is_participant(self, board):
+        request = self.context.get('request')
+        user = request.user
+
+        if request is None or request.user.is_anonymous:
+            return False
+
+        return board.participants.filter(id=user.id).exists()
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

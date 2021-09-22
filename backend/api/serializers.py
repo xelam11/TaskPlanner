@@ -8,11 +8,12 @@ from .models import Board, List, Favorite
 class BoardSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     is_favored = serializers.SerializerMethodField()
+    is_author = serializers.SerializerMethodField()
 
     class Meta:
         model = Board
         fields = ('id', 'name', 'description', 'author', 'is_favored',
-                  'participants')
+                  'is_author', 'participants')
 
     def get_author(self, board):
         return CustomUserSerializer(board.author).data
@@ -25,6 +26,14 @@ class BoardSerializer(serializers.ModelSerializer):
             return False
 
         return Favorite.objects.filter(board=board, user=user).exists()
+
+    def get_is_author(self, board):
+        request = self.context.get('request')
+        user = request.user
+        if request is None or request.user.is_anonymous:
+            return False
+
+        return bool(board.author == user)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

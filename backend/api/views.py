@@ -7,9 +7,20 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .filters import BoardFilter
-from .models import Board, Favorite
+from .models import Board, Favorite, List
 from .permissions import IsAuthor, IsParticipant, IsStaff
 from .serializers import BoardSerializer, ListSerializer
+
+
+class ListViewSet(viewsets.ModelViewSet):
+    queryset = List.objects.all()
+    serializer_class = ListSerializer
+
+    def perform_create(self, serializer):
+        board = get_object_or_404(Board, id=self.request.data['board'])
+        count_of_lists = board.lists.count()
+        serializer.save(board=board,
+                        position=count_of_lists + 1)
 
 
 class BoardViewSet(viewsets.ModelViewSet):
@@ -77,17 +88,3 @@ class BoardViewSet(viewsets.ModelViewSet):
 
         if self.action in ('update', 'partial_update', 'destroy'):
             return [(IsAuthor | IsStaff)()]
-
-
-class ListViewSet(viewsets.ModelViewSet):
-    serializer_class = ListSerializer
-
-    def perform_create(self, serializer):
-        board = get_object_or_404(Board, id=self.kwargs.get('board_id'))
-        count_of_lists = board.lists.count()
-        serializer.save(board=board,
-                        position=count_of_lists + 1)
-
-    def get_queryset(self):
-        board = get_object_or_404(Board, id=self.kwargs.get('board_id'))
-        return board.lists

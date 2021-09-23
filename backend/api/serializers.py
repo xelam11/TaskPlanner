@@ -59,4 +59,3 @@ class ListSerializer(serializers.ModelSerializer):
     class Meta:
         model = List
         fields = ('id', 'name', 'board', 'position')
-        read_only_fields = ('board', )

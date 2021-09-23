@@ -5,8 +5,16 @@ from users.serializers import CustomUserSerializer
 from .models import Board, List, Favorite
 
 
+class ListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = List
+        fields = ('id', 'name', 'board', 'position')
+
+
 class BoardSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
+    lists = ListSerializer(many=True)
     is_favored = serializers.SerializerMethodField()
     is_author = serializers.SerializerMethodField()
     is_participant = serializers.SerializerMethodField()
@@ -14,7 +22,8 @@ class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ('id', 'name', 'description', 'author', 'is_favored',
-                  'is_author', 'is_participant', 'participants')
+                  'is_author', 'is_participant', 'participants', 'lists')
+        read_only_fields = ('lists', )
 
     def get_author(self, board):
         return CustomUserSerializer(board.author).data
@@ -52,10 +61,3 @@ class BoardSerializer(serializers.ModelSerializer):
                                                  read_only=True).data
 
         return {**data, 'participants': participants_data}
-
-
-class ListSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = List
-        fields = ('id', 'name', 'board', 'position')

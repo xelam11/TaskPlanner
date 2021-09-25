@@ -45,13 +45,7 @@ class BoardViewSet(viewsets.ModelViewSet):
     def favorite(self, request, **kwargs):
         user = request.user
         board = get_object_or_404(Board, id=kwargs.get('pk'))
-
-        if user != board.author and \
-                board.participants.filter(id=user.id).exists() is False:
-            return Response({
-                'status': 'error',
-                'message': 'Вы не являетесь ни автором, ни участником доски!'},
-                status=status.HTTP_400_BAD_REQUEST)
+        self.check_object_permissions(self.request, board)
 
         if request.method == 'POST':
             _, is_created = Favorite.objects.get_or_create(user=user,
@@ -80,10 +74,10 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
 
-        if self.action in ('list', 'create', 'favorite'):
+        if self.action in ('list', 'create'):
             return [IsAuthenticated()]
 
-        if self.action == 'retrieve':
+        if self.action in ('retrieve', 'favorite'):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
         if self.action in ('update', 'partial_update', 'destroy'):

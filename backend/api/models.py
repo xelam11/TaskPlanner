@@ -52,6 +52,7 @@ class List(models.Model):
     class Meta:
         verbose_name = 'Список'
         verbose_name_plural = 'Списки'
+        ordering = ['position']
 
     def __str__(self):
         return self.name

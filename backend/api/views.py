@@ -8,7 +8,8 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter
 from .models import Board, Favorite, List
-from .permissions import IsAuthor, IsParticipant, IsStaff
+from .permissions import (IsAuthor, IsParticipant, IsStaff,
+                          IsAuthorOrParticipantOrAdminForCreateList)
 from .serializers import BoardSerializer, ListSerializer
 
 
@@ -21,6 +22,17 @@ class ListViewSet(viewsets.ModelViewSet):
         count_of_lists = board.lists.count()
         serializer.save(board=board,
                         position=count_of_lists + 1)
+
+    def get_permissions(self):
+
+        if self.action == 'list':
+            return [IsAuthenticated()]
+
+        if self.action == 'create':
+            return [IsAuthorOrParticipantOrAdminForCreateList()]
+
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+            return [(IsAuthor | IsParticipant | IsStaff)()]
 
 
 class BoardViewSet(viewsets.ModelViewSet):

@@ -46,6 +46,17 @@ class ListViewSet(BulkModelViewSet):
         serializer.save(board=board,
                         position=count_of_lists + 1)
 
+    def destroy(self, request, *args, **kwargs):
+        current_list = get_object_or_404(List, id=kwargs.get('pk'))
+        pos = current_list.position
+        queryset_of_lists = current_list.board.lists
+
+        for list_ in queryset_of_lists.all()[pos:]:
+            list_.position -= 1
+            list_.save()
+
+        return super().destroy(request, *args, **kwargs)
+
     def get_permissions(self):
 
         if self.action == 'list':

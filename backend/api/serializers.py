@@ -1,14 +1,23 @@
 from rest_framework import serializers
+from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 
 from users.serializers import CustomUserSerializer
 
 from .models import Board, List, Favorite
 
 
-class ListSerializer(serializers.ModelSerializer):
+# class ListSerializer(serializers.ModelSerializer):
+#
+#     class Meta:
+#         model = List
+#         fields = ('id', 'name', 'board', 'position')
+
+
+class ListSerializer(BulkSerializerMixin, serializers.ModelSerializer):
 
     class Meta:
         model = List
+        list_serializer_class = BulkListSerializer
         fields = ('id', 'name', 'board', 'position')
 
 

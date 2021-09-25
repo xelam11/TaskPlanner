@@ -2,6 +2,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
+from rest_framework_bulk import BulkModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -13,7 +14,29 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff,
 from .serializers import BoardSerializer, ListSerializer
 
 
-class ListViewSet(viewsets.ModelViewSet):
+# class ListViewSet(viewsets.ModelViewSet):
+#     queryset = List.objects.all()
+#     serializer_class = ListSerializer
+#
+#     def perform_create(self, serializer):
+#         board = get_object_or_404(Board, id=self.request.data['board'])
+#         count_of_lists = board.lists.count()
+#         serializer.save(board=board,
+#                         position=count_of_lists + 1)
+#
+#     def get_permissions(self):
+#
+#         if self.action == 'list':
+#             return [IsAuthenticated()]
+#
+#         if self.action == 'create':
+#             return [IsAuthorOrParticipantOrAdminForCreateList()]
+#
+#         if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+#             return [(IsAuthor | IsParticipant | IsStaff)()]
+
+
+class ListViewSet(BulkModelViewSet):
     queryset = List.objects.all()
     serializer_class = ListSerializer
 

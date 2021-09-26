@@ -3,7 +3,7 @@ from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 
 from users.serializers import CustomUserSerializer
 
-from .models import Board, List, Favorite
+from .models import Board, List, Favorite, ParticipantRequest
 
 
 # class ListSerializer(serializers.ModelSerializer):
@@ -19,6 +19,13 @@ class ListSerializer(BulkSerializerMixin, serializers.ModelSerializer):
         model = List
         list_serializer_class = BulkListSerializer
         fields = ('id', 'name', 'board', 'position')
+
+
+class ParticipantRequestSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ParticipantRequest
+        fields = ('id', 'board', 'participant')
 
 
 class BoardSerializer(serializers.ModelSerializer):

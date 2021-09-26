@@ -2,12 +2,13 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_bulk.routes import BulkRouter
 
-from .views import BoardViewSet, ListViewSet
+from .views import BoardViewSet, ListViewSet, ParticipantRequestViewSet
 
 
 router = DefaultRouter()
 router.register('boards', BoardViewSet, basename='boards')
 # router.register('lists', ListViewSet, basename='lists')
+router.register('requests', ParticipantRequestViewSet, basename='requests')
 
 router_bulk = BulkRouter()
 router_bulk.register('lists', ListViewSet, basename='lists')

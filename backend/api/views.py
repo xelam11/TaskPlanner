@@ -11,7 +11,8 @@ from .filters import BoardFilter
 from .models import Board, Favorite, List, ParticipantRequest
 from .permissions import (IsAuthor, IsParticipant, IsStaff,
                           IsAuthorOrParticipantOrAdminForCreateList)
-from .serializers import BoardSerializer, ListSerializer
+from .serializers import (BoardSerializer, ListSerializer,
+                          ParticipantRequestSerializer)
 from users.models import CustomUser
 
 
@@ -163,3 +164,15 @@ class BoardViewSet(viewsets.ModelViewSet):
         if self.action in ('update', 'partial_update', 'destroy',
                            'request_participant'):
             return [(IsAuthor | IsStaff)()]
+
+
+class ParticipantRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = ParticipantRequestSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.is_superuser or user.is_staff:
+            return ParticipantRequest.objects.all()
+
+        return ParticipantRequest.objects.filter(participant=user)

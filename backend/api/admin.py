@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Board, Favorite, List
+from .models import Board, Favorite, List, ParticipantRequest
 
 
 class BoardAdmin(admin.ModelAdmin):
@@ -14,3 +14,4 @@ class ListAdmin(admin.ModelAdmin):
 admin.site.register(Board, BoardAdmin)
 admin.site.register(Favorite)
 admin.site.register(List, ListAdmin)
+admin.site.register(ParticipantRequest)

@@ -8,10 +8,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .filters import BoardFilter
-from .models import Board, Favorite, List
+from .models import Board, Favorite, List, ParticipantRequest
 from .permissions import (IsAuthor, IsParticipant, IsStaff,
                           IsAuthorOrParticipantOrAdminForCreateList)
 from .serializers import BoardSerializer, ListSerializer
+from users.models import CustomUser
 
 
 # class ListViewSet(viewsets.ModelViewSet):
@@ -117,6 +118,40 @@ class BoardViewSet(viewsets.ModelViewSet):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=['post', 'delete'])
+    def request_participant(self, request, **kwargs):
+        user_email = request.data['user_email']
+        participant = get_object_or_404(CustomUser, email=user_email)
+        board = get_object_or_404(Board, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, board)
+
+        if request.method == 'POST':
+            _, is_created = ParticipantRequest.objects.get_or_create(
+                participant=participant,
+                board=board)
+
+            if not is_created:
+                return Response({
+                    'status': 'error',
+                    'message': 'Вы уже пригласили этого пользователя!'},
+                    status=status.HTTP_400_BAD_REQUEST)
+
+            return Response(status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            count, _ = ParticipantRequest.objects.filter(
+                participant=participant,
+                board=board).delete()
+
+            if count == 0:
+                return Response({
+                    'status': 'error',
+                    'message': 'Данного пользоателя нет в списке приглашенных!'
+                },
+                    status=status.HTTP_400_BAD_REQUEST)
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
@@ -125,5 +160,6 @@ class BoardViewSet(viewsets.ModelViewSet):
         if self.action in ('retrieve', 'favorite'):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
-        if self.action in ('update', 'partial_update', 'destroy'):
+        if self.action in ('update', 'partial_update', 'destroy',
+                           'request_participant'):
             return [(IsAuthor | IsStaff)()]

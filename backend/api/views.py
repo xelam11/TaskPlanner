@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework_bulk import BulkModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -120,8 +120,8 @@ class BoardViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'])
-    def request_participant(self, request, **kwargs):
-        user_email = request.data['user_email']
+    def send_request(self, request, **kwargs):
+        user_email = request.data['participant']
         participant = get_object_or_404(CustomUser, email=user_email)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
@@ -130,6 +130,18 @@ class BoardViewSet(viewsets.ModelViewSet):
             _, is_created = ParticipantRequest.objects.get_or_create(
                 participant=participant,
                 board=board)
+
+            if request.user == participant:
+                return Response({
+                    'status': 'error',
+                    'message': 'Вы не можете отправить запрос самому себе!'},
+                    status=status.HTTP_400_BAD_REQUEST)
+
+            if board.participants.filter(id=participant.id).exists():
+                return Response({
+                    'status': 'error',
+                    'message': 'Вы не можете отправить запрос участнику доски!'},
+                    status=status.HTTP_400_BAD_REQUEST)
 
             if not is_created:
                 return Response({
@@ -162,11 +174,12 @@ class BoardViewSet(viewsets.ModelViewSet):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
         if self.action in ('update', 'partial_update', 'destroy',
-                           'request_participant'):
+                           'send_request'):
             return [(IsAuthor | IsStaff)()]
 
 
-class ParticipantRequestViewSet(viewsets.ModelViewSet):
+class ParticipantRequestViewSet(viewsets.GenericViewSet,
+                                mixins.ListModelMixin):
     serializer_class = ParticipantRequestSerializer
 
     def get_queryset(self):

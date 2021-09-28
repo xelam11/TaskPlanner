@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter
 from .models import Board, Favorite, List, ParticipantRequest
-from .permissions import (IsAuthor, IsParticipant, IsStaff,
+from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateList)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer)
@@ -178,8 +178,9 @@ class BoardViewSet(viewsets.ModelViewSet):
             return [(IsAuthor | IsStaff)()]
 
 
-class ParticipantRequestViewSet(viewsets.GenericViewSet,
-                                mixins.ListModelMixin):
+class RequestViewSet(viewsets.GenericViewSet,
+                     mixins.ListModelMixin,
+                     mixins.RetrieveModelMixin):
     serializer_class = ParticipantRequestSerializer
 
     def get_queryset(self):
@@ -189,3 +190,14 @@ class ParticipantRequestViewSet(viewsets.GenericViewSet,
             return ParticipantRequest.objects.all()
 
         return ParticipantRequest.objects.filter(participant=user)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsRecipient])
+    def accept(self, request, **kwargs):
+        request_ = get_object_or_404(ParticipantRequest, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, request_)
+        user = request_.participant
+
+        request_.board.participants.add(user)
+        request_.delete()
+
+        return Response(status=status.HTTP_202_ACCEPTED)

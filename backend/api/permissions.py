@@ -41,3 +41,9 @@ class IsAuthorOrParticipantOrAdminForCreateList(permissions.BasePermission):
             return (request.user == board.author or
                     board.participants.filter(id=request.user.id).exists() or
                     request.user.is_staff)
+
+
+class IsRecipient(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        return request.user == obj.participant

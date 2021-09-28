@@ -167,6 +167,24 @@ class BoardViewSet(viewsets.ModelViewSet):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=['post'])
+    def delete_participant(self, request, **kwargs):
+        user_email = request.data['participant']
+        participant = get_object_or_404(CustomUser, email=user_email)
+        board = get_object_or_404(Board, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, board)
+        count_of_participants = board.participants.count()
+
+        board.participants.remove(participant)
+
+        if board.participants.count() == count_of_participants - 1:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response({
+                    'status': 'error',
+                    'message': 'Данный пользователь не является подписчиком!'},
+                    status=status.HTTP_400_BAD_REQUEST)
+
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
@@ -176,7 +194,7 @@ class BoardViewSet(viewsets.ModelViewSet):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
         if self.action in ('update', 'partial_update', 'destroy',
-                           'send_request'):
+                           'send_request', 'delete_participant'):
             return [(IsAuthor | IsStaff)()]
 
 

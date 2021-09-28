@@ -127,9 +127,6 @@ class BoardViewSet(viewsets.ModelViewSet):
         self.check_object_permissions(self.request, board)
 
         if request.method == 'POST':
-            _, is_created = ParticipantRequest.objects.get_or_create(
-                participant=participant,
-                board=board)
 
             if request.user == participant:
                 return Response({
@@ -140,8 +137,13 @@ class BoardViewSet(viewsets.ModelViewSet):
             if board.participants.filter(id=participant.id).exists():
                 return Response({
                     'status': 'error',
-                    'message': 'Вы не можете отправить запрос участнику доски!'},
+                    'message': 'Вы не можете отправить запрос участнику доски!'
+                },
                     status=status.HTTP_400_BAD_REQUEST)
+
+            _, is_created = ParticipantRequest.objects.get_or_create(
+                participant=participant,
+                board=board)
 
             if not is_created:
                 return Response({

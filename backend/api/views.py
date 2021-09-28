@@ -201,3 +201,12 @@ class RequestViewSet(viewsets.GenericViewSet,
         request_.delete()
 
         return Response(status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsRecipient])
+    def refuse(self, request, **kwargs):
+        request_ = get_object_or_404(ParticipantRequest, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, request_)
+
+        request_.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

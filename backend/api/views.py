@@ -8,7 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .filters import BoardFilter
-from .models import Board, Favorite, List, ParticipantRequest
+from .models import (Board, Favorite, List, ParticipantRequest,
+                     ParticipantInBoard)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateList)
 from .serializers import (BoardSerializer, ListSerializer,
@@ -168,6 +169,33 @@ class BoardViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'])
+    def switch_moderator(self, request, **kwargs):
+        user_email = request.data['email']
+        participant = get_object_or_404(CustomUser, email=user_email)
+        board = get_object_or_404(Board, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, board)
+        participant_in_board = get_object_or_404(ParticipantInBoard,
+                                                 board=board,
+                                                 participant=participant,
+                                                 )
+
+        if participant_in_board.is_moderator:
+            participant_in_board.is_moderator = False
+            participant_in_board.save()
+
+            return Response(
+                {'status': 'success',
+                 'message': 'Данный пользователь больше не модератор!'},
+                status=status.HTTP_202_ACCEPTED)
+
+        participant_in_board.is_moderator = True
+        participant_in_board.save()
+
+        return Response({'status': 'success',
+                         'message': 'Данный пользователь теперь модератор!'},
+                        status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=['post'])
     def delete_participant(self, request, **kwargs):
         user_email = request.data['participant']
         participant = get_object_or_404(CustomUser, email=user_email)
@@ -194,7 +222,8 @@ class BoardViewSet(viewsets.ModelViewSet):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
         if self.action in ('update', 'partial_update', 'destroy',
-                           'send_request', 'delete_participant'):
+                           'send_request', 'delete_participant',
+                           'switch_moderator'):
             return [(IsAuthor | IsStaff)()]
 
 

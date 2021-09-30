@@ -78,6 +78,15 @@ class BoardSerializer(serializers.ModelSerializer):
 
         return board.participants.filter(id=user.id).exists()
 
+    def create(self, validated_data):
+        current_user = self.context.get('request').user
+
+        board = Board.objects.create(author=current_user, **validated_data)
+        board.save()
+        board.participants.add(current_user)
+
+        return board
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         participants = instance.participantinboard_set.prefetch_related(

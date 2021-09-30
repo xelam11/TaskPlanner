@@ -122,7 +122,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def send_request(self, request, **kwargs):
-        user_email = request.data['participant']
+        user_email = request.data['email']
         participant = get_object_or_404(CustomUser, email=user_email)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
@@ -170,8 +170,8 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def switch_moderator(self, request, **kwargs):
-        user_email = request.data['email']
-        participant = get_object_or_404(CustomUser, email=user_email)
+        user_id = request.data['id']
+        participant = get_object_or_404(CustomUser, id=user_id)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
         participant_in_board = get_object_or_404(ParticipantInBoard,
@@ -197,8 +197,8 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def delete_participant(self, request, **kwargs):
-        user_email = request.data['participant']
-        participant = get_object_or_404(CustomUser, email=user_email)
+        user_id = request.data['id']
+        participant = get_object_or_404(CustomUser, email=user_id)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
         count_of_participants = board.participants.count()

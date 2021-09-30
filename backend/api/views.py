@@ -225,12 +225,26 @@ class BoardViewSet(viewsets.ModelViewSet):
         board.participants.remove(participant)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=['post'])
+    def leave(self, request, **kwargs):
+        board = get_object_or_404(Board, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, board)
+
+        if request.user == board.author:
+            return Response({
+                'status': 'error',
+                'message': 'Автор доски не может покинуть доску!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        board.participants.remove(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
             return [IsAuthenticated()]
 
-        if self.action in ('retrieve', 'favorite'):
+        if self.action in ('retrieve', 'favorite', 'leave'):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
         if self.action in ('update', 'partial_update', 'destroy',

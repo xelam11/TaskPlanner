@@ -199,20 +199,31 @@ class BoardViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def delete_participant(self, request, **kwargs):
         user_id = request.data['id']
-        participant = get_object_or_404(CustomUser, email=user_id)
+        participant = get_object_or_404(CustomUser, id=user_id)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
-        count_of_participants = board.participants.count()
+        participant_in_board = get_object_or_404(ParticipantInBoard,
+                                                 board=board,
+                                                 participant=participant,
+                                                 )
+        if participant == board.author:
+            return Response({
+                'status': 'error',
+                'message': 'Автора доски нельзя исключить из участников!'},
+                status=status.HTTP_400_BAD_REQUEST)
 
-        board.participants.remove(participant)
-
-        if board.participants.count() == count_of_participants - 1:
+        if request.user == board.author:
+            board.participants.remove(participant)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        return Response({
-                    'status': 'error',
-                    'message': 'Данный пользователь не является участником!'},
-                    status=status.HTTP_400_BAD_REQUEST)
+        if participant_in_board.is_moderator:
+            return Response({
+                'status': 'error',
+                'message': 'Исключить модератора может только автор доски!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        board.participants.remove(participant)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_permissions(self):
 

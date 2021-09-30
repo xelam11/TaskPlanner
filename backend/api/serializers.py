@@ -3,7 +3,8 @@ from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 
 from users.serializers import CustomUserSerializer
 
-from .models import Board, List, Favorite, ParticipantRequest
+from .models import (Board, List, Favorite, ParticipantRequest,
+                     ParticipantInBoard)
 
 
 # class ListSerializer(serializers.ModelSerializer):
@@ -21,6 +22,13 @@ class ListSerializer(BulkSerializerMixin, serializers.ModelSerializer):
         fields = ('id', 'name', 'board', 'position')
 
 
+class ParticipantInBoardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ParticipantInBoard
+        fields = ('id', 'board', 'participant', 'is_moderator')
+
+
 class ParticipantRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -30,7 +38,7 @@ class ParticipantRequestSerializer(serializers.ModelSerializer):
 
 class BoardSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
-    lists = ListSerializer(many=True)
+    lists = ListSerializer(many=True, read_only=True)
     is_favored = serializers.SerializerMethodField()
     is_author = serializers.SerializerMethodField()
     is_participant = serializers.SerializerMethodField()
@@ -39,7 +47,7 @@ class BoardSerializer(serializers.ModelSerializer):
         model = Board
         fields = ('id', 'name', 'description', 'author', 'is_favored',
                   'is_author', 'is_participant', 'participants', 'lists')
-        read_only_fields = ('lists', 'participants')
+        read_only_fields = ('participants', )
 
     def get_author(self, board):
         return CustomUserSerializer(board.author).data
@@ -72,8 +80,14 @@ class BoardSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        participants_data = CustomUserSerializer(instance.participants.all(),
-                                                 many=True,
-                                                 read_only=True).data
+        participants = instance.participantinboard_set.prefetch_related(
+            'participant').all()
+
+        participants_data = [
+            {
+                **CustomUserSerializer(participant_in_board.participant).data,
+                'is_moderator': participant_in_board.is_moderator
+            } for participant_in_board in participants
+        ]
 
         return {**data, 'participants': participants_data}

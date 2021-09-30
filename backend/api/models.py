@@ -19,6 +19,7 @@ class Board(models.Model):
                                verbose_name='Автор',
                                )
     participants = models.ManyToManyField(CustomUser,
+                                          through='ParticipantInBoard',
                                           related_name='boards_participants',
                                           blank=True,
                                           verbose_name='Участники',
@@ -83,6 +84,18 @@ class Favorite(models.Model):
     def __str__(self):
         return (f'Пользователь: {self.user}, '
                 f'избранные доски: {self.board.name}')
+
+
+class ParticipantInBoard(models.Model):
+    board = models.ForeignKey(Board,
+                              on_delete=models.CASCADE,
+                              verbose_name='Доска',
+                              )
+    participant = models.ForeignKey(CustomUser,
+                                    on_delete=models.CASCADE,
+                                    verbose_name='Участник'
+                                    )
+    is_moderator = models.BooleanField(default=False)
 
 
 class ParticipantRequest(models.Model):

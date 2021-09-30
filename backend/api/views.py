@@ -11,7 +11,8 @@ from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
                      ParticipantInBoard)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
-                          IsAuthorOrParticipantOrAdminForCreateList)
+                          IsAuthorOrParticipantOrAdminForCreateList,
+                          IsModerator)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer)
 from users.models import CustomUser
@@ -210,7 +211,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 
         return Response({
                     'status': 'error',
-                    'message': 'Данный пользователь не является подписчиком!'},
+                    'message': 'Данный пользователь не является участником!'},
                     status=status.HTTP_400_BAD_REQUEST)
 
     def get_permissions(self):
@@ -222,9 +223,11 @@ class BoardViewSet(viewsets.ModelViewSet):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
         if self.action in ('update', 'partial_update', 'destroy',
-                           'send_request', 'delete_participant',
                            'switch_moderator'):
             return [(IsAuthor | IsStaff)()]
+
+        if self.action in ('send_request', 'delete_participant'):
+            return [(IsAuthor | IsModerator | IsStaff)()]
 
 
 class RequestViewSet(viewsets.GenericViewSet,

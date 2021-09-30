@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 
-from .models import Board, List
+from .models import Board, List, ParticipantInBoard
 
 
 class IsAuthor(permissions.BasePermission):
@@ -47,3 +47,13 @@ class IsRecipient(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user == obj.participant
+
+
+class IsModerator(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        participant_in_board = get_object_or_404(ParticipantInBoard,
+                                                 board=obj,
+                                                 participant=request.user
+                                                 )
+        return participant_in_board.is_moderator

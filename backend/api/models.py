@@ -4,6 +4,26 @@ from django.db import models
 from users.models import CustomUser
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=20,
+                            verbose_name='Название цвета',
+                            help_text='Напишите название цвета',
+                            unique=True
+                            )
+    color = models.CharField(max_length=7,
+                             verbose_name='Код цвета (HEX)',
+                             help_text='Напишите код цвета (HEX)',
+                             unique=True,
+                             )
+
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+
+    def __str__(self):
+        return self.name
+
+
 class Board(models.Model):
     name = models.CharField(max_length=50,
                             verbose_name='Название',
@@ -29,31 +49,6 @@ class Board(models.Model):
         verbose_name = 'Доска'
         verbose_name_plural = 'Доски'
         ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
-
-class List(models.Model):
-    name = models.CharField(max_length=50,
-                            verbose_name='Название',
-                            help_text='Напишите название',
-                            )
-    board = models.ForeignKey(Board,
-                              on_delete=models.CASCADE,
-                              related_name='lists',
-                              verbose_name='Доска',
-                              )
-    position = models.PositiveSmallIntegerField(
-        verbose_name='Номер позиции на доске',
-        blank=True,
-        validators=[MinValueValidator(1), ]
-    )
-
-    class Meta:
-        verbose_name = 'Список'
-        verbose_name_plural = 'Списки'
-        ordering = ['position']
 
     def __str__(self):
         return self.name
@@ -119,29 +114,75 @@ class ParticipantRequest(models.Model):
     def __str__(self):
         return (f'Доска: {self.board}, '
                 f'запрашиваемый пользователь: {self.participant}')
+
+
+class List(models.Model):
+    name = models.CharField(max_length=50,
+                            verbose_name='Название',
+                            help_text='Напишите название',
+                            )
+    board = models.ForeignKey(Board,
+                              on_delete=models.CASCADE,
+                              related_name='lists',
+                              verbose_name='Доска',
+                              )
+    position = models.PositiveSmallIntegerField(
+        verbose_name='Номер позиции на доске',
+        blank=True,
+        validators=[MinValueValidator(1), ]
+    )
+
+    class Meta:
+        verbose_name = 'Список'
+        verbose_name_plural = 'Списки'
+        ordering = ['position']
+
+    def __str__(self):
+        return self.name
 #
 #
-# class Tag(models.Model):
+# class Card(models.Model):
 #     name = models.CharField(max_length=50,
-#                             verbose_name='Название цвета',
-#                             help_text='Напишите название цвета',
-#                             default='Белый',
+#                             verbose_name='Название',
+#                             help_text='Напишите название',
 #                             )
-#     color = models.CharField(max_length=7,
-#                              verbose_name='Код цвета',
-#                              help_text='Напишите код цвета',
-#                              default='#ffffff',
-#                              unique=True,
+#     description = models.TextField(verbose_name='Оисание',
+#                                    help_text='Напишите описание',
+#                                    blank=True,
+#                                    )
+#     list = models.ForeignKey(List,
+#                              on_delete=models.CASCADE,
+#                              related_name='cards',
+#                              verbose_name='Лист'
 #                              )
+#     participants = models.ManyToManyField(CustomUser,
+#                                           related_name='cards_participants',
+#                                           blank=True,
+#                                           verbose_name='Участники',
+#                                           )
+#     tags = models.ManyToManyField(Tag,
+#                                   related_name='cards',
+#                                   blank=True,
+#                                   verbose_name='Тег',
+#                                   )
+#     files = models.FileField(upload_to='cards',
+#                              blank=True,
+#                              verbose_name='Файл',
+#                              help_text='Загрузите файл',
+#                              )
+#     position = models.PositiveSmallIntegerField(
+#         verbose_name='Номер позиции на листе',
+#         blank=True,
+#         validators=[MinValueValidator(1), ]
+#     )
 #
 #     class Meta:
-#         verbose_name = 'Тег'
-#         verbose_name_plural = 'Теги'
+#         verbose_name = 'Карточка'
+#         verbose_name_plural = 'Карточки'
+#         ordering = ['position']
 #
 #     def __str__(self):
 #         return self.name
-#
-#
 #
 #
 # class Comment(models.Model):

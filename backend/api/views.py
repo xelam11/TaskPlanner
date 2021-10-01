@@ -9,12 +9,12 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
-                     ParticipantInBoard)
+                     ParticipantInBoard, Tag)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateList,
                           IsModerator)
 from .serializers import (BoardSerializer, ListSerializer,
-                          ParticipantRequestSerializer)
+                          ParticipantRequestSerializer, TagSerializer)
 from users.models import CustomUser
 
 
@@ -38,6 +38,11 @@ from users.models import CustomUser
 #
 #         if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
 #             return [(IsAuthor | IsParticipant | IsStaff)()]
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
 
 
 class ListViewSet(BulkModelViewSet):

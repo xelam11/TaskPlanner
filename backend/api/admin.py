@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Board, Favorite, List, ParticipantRequest
+from .models import Board, Favorite, List, ParticipantRequest, Tag
 
 
 class BoardAdmin(admin.ModelAdmin):
@@ -15,3 +15,4 @@ admin.site.register(Board, BoardAdmin)
 admin.site.register(Favorite)
 admin.site.register(List, ListAdmin)
 admin.site.register(ParticipantRequest)
+admin.site.register(Tag)

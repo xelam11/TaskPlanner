@@ -92,6 +92,12 @@ class BoardSerializer(serializers.ModelSerializer):
         board.save()
         board.participants.add(current_user)
 
+        participant_in_board = ParticipantInBoard.objects.get(
+            board=board,
+            participant=current_user)
+        participant_in_board.is_moderator = True
+        participant_in_board.save()
+
         return board
 
     def to_representation(self, instance):

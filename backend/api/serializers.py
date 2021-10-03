@@ -62,7 +62,7 @@ class BoardSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'description', 'author', 'is_favored',
                   'is_author', 'is_participant', 'participants', 'lists',
                   'tags')
-        read_only_fields = ('participants', )
+        read_only_fields = ('participants', 'tags')
 
     def get_author(self, board):
         return CustomUserSerializer(board.author).data

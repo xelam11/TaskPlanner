@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
-                     ParticipantInBoard, Tag)
+                     ParticipantInBoard, Tag, TagInBoard)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateList,
                           IsModerator)
@@ -241,6 +241,22 @@ class BoardViewSet(viewsets.ModelViewSet):
         board.participants.remove(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=['put', 'patch'])
+    def edit_tag(self, request, **kwargs):
+        tag_id = request.data['id']
+        tag = get_object_or_404(Tag, id=tag_id)
+        board = get_object_or_404(Board, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, board)
+        tag_in_board = get_object_or_404(TagInBoard,
+                                         board=board,
+                                         tag=tag)
+        content = request.data['content']
+
+        tag_in_board.content = content
+        tag_in_board.save()
+
+        return Response(status=status.HTTP_200_OK)
+
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
@@ -253,7 +269,7 @@ class BoardViewSet(viewsets.ModelViewSet):
                            'switch_moderator'):
             return [(IsAuthor | IsStaff)()]
 
-        if self.action in ('send_request', 'delete_participant'):
+        if self.action in ('send_request', 'delete_participant', 'edit_tag'):
             return [(IsAuthor | IsModerator | IsStaff)()]
 
 

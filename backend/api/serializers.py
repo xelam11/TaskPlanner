@@ -4,7 +4,7 @@ from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 from users.serializers import CustomUserSerializer
 
 from .models import (Board, List, Favorite, ParticipantRequest,
-                     ParticipantInBoard, Tag)
+                     ParticipantInBoard, Tag, TagInBoard)
 
 
 # class ListSerializer(serializers.ModelSerializer):
@@ -43,6 +43,13 @@ class ParticipantRequestSerializer(serializers.ModelSerializer):
         fields = ('id', 'board', 'participant')
 
 
+class TagInBoardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TagInBoard
+        fields = ('id', 'tag', 'board', 'content')
+
+
 class BoardSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     lists = ListSerializer(many=True, read_only=True)
@@ -53,7 +60,8 @@ class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ('id', 'name', 'description', 'author', 'is_favored',
-                  'is_author', 'is_participant', 'participants', 'lists')
+                  'is_author', 'is_participant', 'participants', 'lists',
+                  'tags')
         read_only_fields = ('participants', )
 
     def get_author(self, board):
@@ -89,7 +97,7 @@ class BoardSerializer(serializers.ModelSerializer):
         current_user = self.context.get('request').user
 
         board = Board.objects.create(author=current_user, **validated_data)
-        board.save()
+        # board.save()
         board.participants.add(current_user)
 
         participant_in_board = ParticipantInBoard.objects.get(
@@ -98,12 +106,16 @@ class BoardSerializer(serializers.ModelSerializer):
         participant_in_board.is_moderator = True
         participant_in_board.save()
 
+        for tag in Tag.objects.all():
+            TagInBoard.objects.create(board=board, tag=tag)
+
         return board
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         participants = instance.participantinboard_set.prefetch_related(
             'participant').all()
+        tags = instance.taginboard_set.prefetch_related('tag').all()
 
         participants_data = [
             {
@@ -112,4 +124,11 @@ class BoardSerializer(serializers.ModelSerializer):
             } for participant_in_board in participants
         ]
 
-        return {**data, 'participants': participants_data}
+        tags_data = [
+            {
+                **TagSerializer(tag_in_board.tag).data,
+                'content': tag_in_board.content
+            } for tag_in_board in tags
+        ]
+
+        return {**data, 'participants': participants_data, 'tags': tags_data}

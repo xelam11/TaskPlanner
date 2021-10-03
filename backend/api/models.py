@@ -44,6 +44,12 @@ class Board(models.Model):
                                           blank=True,
                                           verbose_name='Участники',
                                           )
+    tags = models.ManyToManyField(Tag,
+                                  through='TagInBoard',
+                                  related_name='boards',
+                                  blank=True,
+                                  verbose_name='Тег',
+                                  )
 
     class Meta:
         verbose_name = 'Доска'
@@ -92,6 +98,13 @@ class ParticipantInBoard(models.Model):
                                     )
     is_moderator = models.BooleanField(default=False)
 
+    class Meta:
+        verbose_name = 'Участник в доске'
+        verbose_name_plural = 'Участники в досках'
+
+    def __str__(self):
+        return f'Участник: {self.participant} => {self.board}'
+
 
 class ParticipantRequest(models.Model):
     board = models.ForeignKey(Board,
@@ -114,6 +127,29 @@ class ParticipantRequest(models.Model):
     def __str__(self):
         return (f'Доска: {self.board}, '
                 f'запрашиваемый пользователь: {self.participant}')
+
+
+class TagInBoard(models.Model):
+    tag = models.ForeignKey(Tag,
+                            on_delete=models.CASCADE,
+                            verbose_name='Тег',
+                            )
+    board = models.ForeignKey(Board,
+                              on_delete=models.CASCADE,
+                              verbose_name='Доска'
+                              )
+    content = models.CharField(max_length=20,
+                               blank=True,
+                               default='',
+                               verbose_name='Содержание',
+                               help_text='Напишите содержание')
+
+    class Meta:
+        verbose_name = 'Тег в доске'
+        verbose_name_plural = 'Теги в досках'
+
+    def __str__(self):
+        return f'Тег: {self.tag} (содержание: {self.content}) => {self.board}'
 
 
 class List(models.Model):
@@ -141,70 +177,49 @@ class List(models.Model):
         return self.name
 
 
-class Card(models.Model):
-    name = models.CharField(max_length=50,
-                            verbose_name='Название',
-                            help_text='Напишите название',
-                            )
-    description = models.TextField(verbose_name='Оисание',
-                                   help_text='Напишите описание',
-                                   blank=True,
-                                   )
-    list = models.ForeignKey(List,
-                             on_delete=models.CASCADE,
-                             related_name='cards',
-                             verbose_name='Лист'
-                             )
-    participants = models.ManyToManyField(CustomUser,
-                                          related_name='cards_participants',
-                                          blank=True,
-                                          verbose_name='Участники',
-                                          )
-    tags = models.ManyToManyField(Tag,
-                                  through='TagInCard',
-                                  related_name='cards',
-                                  blank=True,
-                                  verbose_name='Тег',
-                                  )
-    files = models.FileField(upload_to='cards',
-                             blank=True,
-                             verbose_name='Файл',
-                             help_text='Загрузите файл',
-                             )
-    position = models.PositiveSmallIntegerField(
-        verbose_name='Номер позиции на листе',
-        blank=True,
-        validators=[MinValueValidator(1), ]
-    )
+# class Card(models.Model):
+#     name = models.CharField(max_length=50,
+#                             verbose_name='Название',
+#                             help_text='Напишите название',
+#                             )
+#     description = models.TextField(verbose_name='Оисание',
+#                                    help_text='Напишите описание',
+#                                    blank=True,
+#                                    )
+#     list = models.ForeignKey(List,
+#                              on_delete=models.CASCADE,
+#                              related_name='cards',
+#                              verbose_name='Лист'
+#                              )
+#     participants = models.ManyToManyField(CustomUser,
+#                                           related_name='cards_participants',
+#                                           blank=True,
+#                                           verbose_name='Участники',
+#                                           )
+#     tags = models.ManyToManyField(Tag,
+#                                   related_name='cards',
+#                                   blank=True,
+#                                   verbose_name='Тег',
+#                                   )
+#     files = models.FileField(upload_to='cards',
+#                              blank=True,
+#                              verbose_name='Файл',
+#                              help_text='Загрузите файл',
+#                              )
+#     position = models.PositiveSmallIntegerField(
+#         verbose_name='Номер позиции на листе',
+#         blank=True,
+#         validators=[MinValueValidator(1), ]
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Карточка'
+#         verbose_name_plural = 'Карточки'
+#         ordering = ['position']
+#
+#     def __str__(self):
+#         return self.name
 
-    class Meta:
-        verbose_name = 'Карточка'
-        verbose_name_plural = 'Карточки'
-        ordering = ['position']
-
-    def __str__(self):
-        return self.name
-
-
-class TagInCard(models.Model):
-    tag = models.ForeignKey(Tag,
-                            on_delete=models.CASCADE,
-                            verbose_name='Тег',
-                            )
-    card = models.ForeignKey(Card,
-                             on_delete=models.CASCADE,
-                             verbose_name='Карточка'
-                             )
-    content = models.CharField(max_length=20,
-                               verbose_name='Содержание',
-                               help_text='Напишите содержание')
-
-    class Meta:
-        verbose_name = 'Тег в карточке'
-        verbose_name_plural = 'Теги в карточках'
-
-    def __str__(self):
-        return f'Тег: {self.tag}, карточка: {self.card}'
 #
 #
 # class Comment(models.Model):

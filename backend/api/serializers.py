@@ -4,7 +4,7 @@ from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 from users.serializers import CustomUserSerializer
 
 from .models import (Board, List, Favorite, ParticipantRequest,
-                     ParticipantInBoard, Tag, TagInBoard)
+                     ParticipantInBoard, Tag, TagInBoard, Card)
 
 
 # class ListSerializer(serializers.ModelSerializer):
@@ -21,12 +21,21 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'color')
 
 
+class CardSerializer(BulkSerializerMixin, serializers.ModelSerializer):
+
+    class Meta:
+        model = Card
+        list_serializer_class = BulkListSerializer
+        fields = ('id', 'name', 'description', 'list', 'position')
+
+
 class ListSerializer(BulkSerializerMixin, serializers.ModelSerializer):
+    cards = CardSerializer(many=True, read_only=True)
 
     class Meta:
         model = List
         list_serializer_class = BulkListSerializer
-        fields = ('id', 'name', 'board', 'position')
+        fields = ('id', 'name', 'board', 'position', 'cards')
 
 
 class ParticipantInBoardSerializer(serializers.ModelSerializer):

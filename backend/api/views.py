@@ -9,12 +9,14 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
-                     ParticipantInBoard, Tag, TagInBoard)
+                     ParticipantInBoard, Tag, TagInBoard, Card)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateList,
-                          IsModerator)
+                          IsModerator,
+                          IsAuthorOrParticipantOrAdminForCreateCard)
 from .serializers import (BoardSerializer, ListSerializer,
-                          ParticipantRequestSerializer, TagSerializer)
+                          ParticipantRequestSerializer, TagSerializer,
+                          CardSerializer)
 from users.models import CustomUser
 
 
@@ -305,3 +307,35 @@ class RequestViewSet(viewsets.GenericViewSet,
         request_.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CardViewSet(BulkModelViewSet):
+    queryset = Card.objects.all()
+    serializer_class = CardSerializer
+
+    def perform_create(self, serializer):
+        list = get_object_or_404(List, id=self.request.data['list'])
+        count_of_cards = list.cards.count()
+        serializer.save(list=list,
+                        position=count_of_cards + 1)
+
+    def perform_destroy(self, instance):
+        position = instance.position
+        queryset_of_cards = instance.board.cards
+
+        for card in queryset_of_cards.all()[position:]:
+            card.position -= 1
+            card.save()
+
+        instance.delete()
+
+    def get_permissions(self):
+
+        if self.action == 'list':
+            return [IsAuthenticated()]
+
+        if self.action == 'create':
+            return [IsAuthorOrParticipantOrAdminForCreateCard()]
+
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+            return [(IsAuthor | IsParticipant | IsStaff)()]

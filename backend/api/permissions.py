@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 
-from .models import Board, List, ParticipantInBoard
+from .models import Board, List, ParticipantInBoard, Card
 
 
 class IsAuthor(permissions.BasePermission):
@@ -14,6 +14,9 @@ class IsAuthor(permissions.BasePermission):
         elif type(obj) is List:
             return obj.board.author == request.user
 
+        elif type(obj) is Card:
+            return obj.list.board.author == request.user
+
 
 class IsParticipant(permissions.BasePermission):
 
@@ -24,6 +27,10 @@ class IsParticipant(permissions.BasePermission):
 
         if type(obj) is List:
             return obj.board.participants.filter(id=request.user.id).exists()
+
+        if type(obj) is Card:
+            return obj.list.board.participants.filter(
+                id=request.user.id).exists()
 
 
 class IsStaff(permissions.BasePermission):
@@ -57,3 +64,15 @@ class IsModerator(permissions.BasePermission):
                                                  participant=request.user
                                                  )
         return participant_in_board.is_moderator
+
+
+class IsAuthorOrParticipantOrAdminForCreateCard(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        list_ = get_object_or_404(List, id=request.data['list'])
+        board = list_.board
+
+        if request.user.is_authenticated:
+            return (request.user == board.author or
+                    board.participants.filter(id=request.user.id).exists() or
+                    request.user.is_staff)

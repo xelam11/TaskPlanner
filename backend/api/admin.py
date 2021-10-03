@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (Board, Favorite, List, ParticipantRequest, Tag,
-                     ParticipantInBoard, TagInBoard)
+                     ParticipantInBoard, TagInBoard, Card)
 
 
 class BoardAdmin(admin.ModelAdmin):
@@ -27,3 +27,4 @@ admin.site.register(ParticipantRequest)
 admin.site.register(ParticipantInBoard, ParticipantInBoardAdmin)
 admin.site.register(Tag)
 admin.site.register(TagInBoard, TagInBoardAdmin)
+admin.site.register(Card)

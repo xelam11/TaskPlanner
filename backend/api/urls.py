@@ -8,12 +8,11 @@ from .views import (BoardViewSet, ListViewSet, RequestViewSet, TagViewSet,
 
 router = DefaultRouter()
 router.register('boards', BoardViewSet, basename='boards')
-# router.register('lists', ListViewSet, basename='lists')
+router.register('lists', ListViewSet, basename='lists')
 router.register('requests', RequestViewSet, basename='requests')
 router.register('tags', TagViewSet, basename='tags')
 
 router_bulk = BulkRouter()
-router_bulk.register('lists', ListViewSet, basename='lists')
 router_bulk.register('cards', CardViewSet, basename='cards')
 
 urlpatterns = [

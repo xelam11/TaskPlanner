@@ -25,7 +25,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
 
 
-class ListViewSet(BulkModelViewSet):
+class ListViewSet(viewsets.ModelViewSet):
     queryset = List.objects.all()
     serializer_class = ListSerializer
 
@@ -45,6 +45,26 @@ class ListViewSet(BulkModelViewSet):
 
         instance.delete()
 
+    @action(detail=True, methods=['post'])
+    def swap(self, request, **kwargs):
+        list_1 = get_object_or_404(List, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, list_1)
+
+        list_2_id = request.data['id']
+        list_2 = get_object_or_404(List, id=list_2_id)
+
+        if list_1.board != list_2.board:
+            return Response({
+                    'status': 'error',
+                    'message': 'Нельзя менять местами листы из разных досок!'},
+                    status=status.HTTP_400_BAD_REQUEST)
+
+        list_1.position, list_2.position = list_2.position, list_1.position
+        list_1.save()
+        list_2.save()
+
+        return Response(status=status.HTTP_202_ACCEPTED)
+
     def get_permissions(self):
 
         if self.action == 'list':
@@ -53,7 +73,8 @@ class ListViewSet(BulkModelViewSet):
         if self.action == 'create':
             return [IsAuthorOrParticipantOrAdminForCreateList()]
 
-        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
+                           'swap'):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
 

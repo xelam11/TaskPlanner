@@ -22,14 +22,13 @@ class CardSerializer(BulkSerializerMixin, serializers.ModelSerializer):
         fields = ('id', 'name', 'description', 'list', 'position')
 
 
-class ListSerializer(BulkSerializerMixin, serializers.ModelSerializer):
+class ListSerializer(serializers.ModelSerializer):
     cards = CardSerializer(many=True, read_only=True)
 
     class Meta:
         model = List
-        list_serializer_class = BulkListSerializer
         fields = ('id', 'name', 'board', 'position', 'cards')
-        read_only_fields = ('board', )
+        read_only_fields = ('board', 'position')
 
 
 class ParticipantInBoardSerializer(serializers.ModelSerializer):

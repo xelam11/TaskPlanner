@@ -20,28 +20,6 @@ from .serializers import (BoardSerializer, ListSerializer,
 from users.models import CustomUser
 
 
-# class ListViewSet(viewsets.ModelViewSet):
-#     queryset = List.objects.all()
-#     serializer_class = ListSerializer
-#
-#     def perform_create(self, serializer):
-#         board = get_object_or_404(Board, id=self.request.data['board'])
-#         count_of_lists = board.lists.count()
-#         serializer.save(board=board,
-#                         position=count_of_lists + 1)
-#
-#     def get_permissions(self):
-#
-#         if self.action == 'list':
-#             return [IsAuthenticated()]
-#
-#         if self.action == 'create':
-#             return [IsAuthorOrParticipantOrAdminForCreateList()]
-#
-#         if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
-#             return [(IsAuthor | IsParticipant | IsStaff)()]
-
-
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer

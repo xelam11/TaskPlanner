@@ -54,9 +54,9 @@ class ListViewSet(viewsets.ModelViewSet):
 
         if list_1.board != list_2.board:
             return Response({
-                    'status': 'error',
-                    'message': 'Нельзя менять местами листы из разных досок!'},
-                    status=status.HTTP_400_BAD_REQUEST)
+                'status': 'error',
+                'message': 'Нельзя менять местами листы из разных досок!'},
+                status=status.HTTP_400_BAD_REQUEST)
 
         list_1.position, list_2.position = list_2.position, list_1.position
         list_1.save()
@@ -377,6 +377,27 @@ class CardViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'])
+    def swap(self, request, **kwargs):
+        card_1 = get_object_or_404(Card, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, card_1)
+
+        card_2_id = request.data['id']
+        card_2 = get_object_or_404(Card, id=card_2_id)
+
+        if card_1.list != card_2.list:
+            return Response({
+                'status': 'error',
+                'message':
+                    'Нельзя менять местами карточки из разных листов!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        card_1.position, card_2.position = card_2.position, card_1.position
+        card_1.save()
+        card_2.save()
+
+        return Response(status=status.HTTP_202_ACCEPTED)
+
     def get_permissions(self):
 
         if self.action == 'list':
@@ -386,5 +407,5 @@ class CardViewSet(viewsets.ModelViewSet):
             return [IsAuthorOrParticipantOrAdminForCreateCard()]
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
-                           'change_list'):
+                           'change_list', 'swap'):
             return [(IsAuthor | IsParticipant | IsStaff)()]

@@ -23,6 +23,10 @@ class CardSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         participants = data.get('participants')
+
+        if participants is None:
+            return data
+
         card = Card.objects.get(id=self.context['card_id'])
         board = card.list.board
 

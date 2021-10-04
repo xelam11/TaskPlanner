@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 
 from users.serializers import CustomUserSerializer
 
@@ -14,11 +13,10 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'color')
 
 
-class CardSerializer(BulkSerializerMixin, serializers.ModelSerializer):
+class CardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Card
-        list_serializer_class = BulkListSerializer
         fields = ('id', 'name', 'description', 'list', 'position')
 
 

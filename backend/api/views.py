@@ -2,7 +2,6 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
-from rest_framework_bulk import BulkModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -308,7 +307,7 @@ class RequestViewSet(viewsets.GenericViewSet,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class CardViewSet(BulkModelViewSet):
+class CardViewSet(viewsets.ModelViewSet):
     queryset = Card.objects.all()
     serializer_class = CardSerializer
 

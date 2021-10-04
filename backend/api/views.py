@@ -319,7 +319,7 @@ class CardViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         position = instance.position
-        queryset_of_cards = instance.board.cards
+        queryset_of_cards = instance.list.cards
 
         for card in queryset_of_cards.all()[position:]:
             card.position -= 1

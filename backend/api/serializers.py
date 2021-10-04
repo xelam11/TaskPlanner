@@ -17,8 +17,29 @@ class CardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Card
-        fields = ('id', 'name', 'description', 'list', 'position')
+        fields = ('id', 'name', 'description', 'list', 'position',
+                  'participants')
         read_only_fields = ('list', 'position')
+
+    def validate(self, data):
+        participants = data.get('participants')
+        card = Card.objects.get(id=self.context['card_id'])
+        board = card.list.board
+
+        for participant in participants:
+            if not board.participants.filter(id=participant.id).exists():
+                msg = f"Пользователя '{participant}' нельзя добавить в " \
+                      f"карточку, т.к. он не является участником доски!"
+                raise serializers.ValidationError(msg)
+
+        return data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        participants_data = CustomUserSerializer(
+            instance.participants.all(), many=True).data
+
+        return {**data, 'participants': participants_data}
 
 
 class ListSerializer(serializers.ModelSerializer):

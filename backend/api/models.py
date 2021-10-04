@@ -191,11 +191,11 @@ class Card(models.Model):
                              related_name='cards',
                              verbose_name='Лист'
                              )
-    # participants = models.ManyToManyField(CustomUser,
-    #                                       related_name='cards_participants',
-    #                                       blank=True,
-    #                                       verbose_name='Участники',
-    #                                       )
+    participants = models.ManyToManyField(CustomUser,
+                                          related_name='cards_participants',
+                                          blank=True,
+                                          verbose_name='Участники',
+                                          )
     # tags = models.ManyToManyField(Tag,
     #                               related_name='cards',
     #                               blank=True,

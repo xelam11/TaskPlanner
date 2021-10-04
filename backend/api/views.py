@@ -327,6 +327,9 @@ class CardViewSet(viewsets.ModelViewSet):
 
         instance.delete()
 
+    def get_serializer_context(self):
+        return {'card_id': self.kwargs.get('pk')}
+
     @action(detail=True, methods=['put', 'patch'])
     def change_list(self, request, **kwargs):
         card = get_object_or_404(Card, id=kwargs.get('pk'))

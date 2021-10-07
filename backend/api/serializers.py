@@ -18,7 +18,7 @@ class CardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Card
         fields = ('id', 'name', 'description', 'list', 'position',
-                  'participants')
+                  'participants', 'files')
         read_only_fields = ('list', 'position')
 
     def validate(self, data):

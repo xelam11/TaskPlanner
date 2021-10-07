@@ -201,11 +201,11 @@ class Card(models.Model):
     #                               blank=True,
     #                               verbose_name='Тег',
     #                               )
-    # files = models.FileField(upload_to='cards',
-    #                          blank=True,
-    #                          verbose_name='Файл',
-    #                          help_text='Загрузите файл',
-    #                          )
+    files = models.FileField(upload_to='cards',
+                             blank=True,
+                             verbose_name='Файл',
+                             help_text='Загрузите файл',
+                             )
     position = models.PositiveSmallIntegerField(
         verbose_name='Номер позиции на листе',
         blank=True,

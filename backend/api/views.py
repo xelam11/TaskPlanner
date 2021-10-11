@@ -1,4 +1,3 @@
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
@@ -15,7 +14,7 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateCard)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer, TagSerializer,
-                          CardSerializer)
+                          CardSerializer, ParticipantInBoardSerializer)
 from users.models import CustomUser
 
 
@@ -80,7 +79,6 @@ class ListViewSet(viewsets.ModelViewSet):
 class BoardViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, ]
     filter_class = BoardFilter
-    serializer_class = BoardSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -88,9 +86,30 @@ class BoardViewSet(viewsets.ModelViewSet):
         if user.is_superuser or user.is_staff:
             return Board.objects.all()
 
-        # return Board.objects.filter(
-        #     Q(author=user) | Q(participants__id=user.id))
         return Board.objects.all()
+
+    def get_serializer_class(self):
+
+        if self.action == 'participants':
+            return ParticipantInBoardSerializer
+
+        else:
+            return BoardSerializer
+
+    def get_permissions(self):
+
+        if self.action in ('list', 'create'):
+            return [IsAuthenticated()]
+
+        if self.action in ('retrieve', 'favorite', 'leave', 'participants'):
+            return [(IsAuthor | IsParticipant | IsStaff)()]
+
+        if self.action in ('update', 'partial_update', 'destroy',
+                           'switch_moderator'):
+            return [(IsAuthor | IsStaff)()]
+
+        if self.action in ('send_request', 'delete_participant', 'edit_tag'):
+            return [(IsAuthor | IsModerator | IsStaff)()]
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, **kwargs):
@@ -257,20 +276,15 @@ class BoardViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_200_OK)
 
-    def get_permissions(self):
+    @action(detail=True)
+    def participants(self, request, **kwargs):
+        board = get_object_or_404(Board, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, board)
+        qs_participants = ParticipantInBoard.objects.filter(board=board)
 
-        if self.action in ('list', 'create'):
-            return [IsAuthenticated()]
+        serializer = self.get_serializer(qs_participants, many=True)
 
-        if self.action in ('retrieve', 'favorite', 'leave'):
-            return [(IsAuthor | IsParticipant | IsStaff)()]
-
-        if self.action in ('update', 'partial_update', 'destroy',
-                           'switch_moderator'):
-            return [(IsAuthor | IsStaff)()]
-
-        if self.action in ('send_request', 'delete_participant', 'edit_tag'):
-            return [(IsAuthor | IsModerator | IsStaff)()]
+        return Response(serializer.data)
 
 
 class RequestViewSet(viewsets.GenericViewSet,

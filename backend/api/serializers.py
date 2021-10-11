@@ -56,6 +56,7 @@ class ListSerializer(serializers.ModelSerializer):
 
 
 class ParticipantInBoardSerializer(serializers.ModelSerializer):
+    participant = CustomUserSerializer(read_only=True)
 
     class Meta:
         model = ParticipantInBoard
@@ -123,7 +124,6 @@ class BoardSerializer(serializers.ModelSerializer):
         current_user = self.context.get('request').user
 
         board = Board.objects.create(author=current_user, **validated_data)
-        # board.save()
         board.participants.add(current_user)
 
         participant_in_board = ParticipantInBoard.objects.get(
@@ -136,25 +136,3 @@ class BoardSerializer(serializers.ModelSerializer):
             TagInBoard.objects.create(board=board, tag=tag)
 
         return board
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        participants = instance.participantinboard_set.prefetch_related(
-            'participant').all()
-        tags = instance.taginboard_set.prefetch_related('tag').all()
-
-        participants_data = [
-            {
-                **CustomUserSerializer(participant_in_board.participant).data,
-                'is_moderator': participant_in_board.is_moderator
-            } for participant_in_board in participants
-        ]
-
-        tags_data = [
-            {
-                **TagSerializer(tag_in_board.tag).data,
-                'content': tag_in_board.content
-            } for tag_in_board in tags
-        ]
-
-        return {**data, 'participants': participants_data, 'tags': tags_data}

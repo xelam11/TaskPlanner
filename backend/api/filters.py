@@ -1,4 +1,3 @@
-from django.db.models import Q
 import django_filters as filters
 
 from .models import Board
@@ -17,25 +16,22 @@ class BoardFilter(filters.FilterSet):
         user = self.request.user
 
         if value:
-            return Board.objects.filter(favorite_board__user=user)
+            return queryset.filter(favorite_board__user=user)
 
-        return Board.objects.filter(
-            Q(author=user) | Q(participants__id=user.id))
+        return queryset.exclude(favorite_board__user=user)
 
     def get_is_author(self, queryset, name, value):
         user = self.request.user
 
         if value:
-            return Board.objects.filter(author=user)
+            return queryset.filter(author=user)
 
-        return Board.objects.filter(
-            Q(author=user) | Q(participants__id=user.id))
+        return queryset.exclude(author=user)
 
     def get_is_participant(self, queryset, name, value):
         user = self.request.user
 
         if value:
-            return Board.objects.filter(participants__id=user.id)
+            return queryset.filter(participants__id=user.id)
 
-        return Board.objects.filter(
-            Q(author=user) | Q(participants__id=user.id))
+        return queryset.exclude(participants__id=user.id)

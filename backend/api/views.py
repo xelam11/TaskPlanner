@@ -43,13 +43,26 @@ class ListViewSet(viewsets.ModelViewSet):
 
         instance.delete()
 
-    @action(detail=True, methods=['post'])
-    def swap(self, request, **kwargs):
-        list_1 = get_object_or_404(List, id=kwargs.get('pk'))
-        self.check_object_permissions(self.request, list_1)
+    def get_permissions(self):
 
-        list_2_id = request.data['id']
+        if self.action == 'list':
+            return [IsAuthenticated()]
+
+        if self.action == 'create':
+            return [IsAuthorOrParticipantOrAdminForCreateList()]
+
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
+                           'swap'):
+            return [(IsAuthor | IsParticipant | IsStaff)()]
+
+    @action(detail=False, methods=['post'])
+    def swap(self, request, **kwargs):
+        list_1_id = request.data['list_1_id']
+        list_2_id = request.data['list_2_id']
+
+        list_1 = get_object_or_404(List, id=list_1_id)
         list_2 = get_object_or_404(List, id=list_2_id)
+        self.check_object_permissions(request, list_1)
 
         if list_1.board != list_2.board:
             return Response({
@@ -62,18 +75,6 @@ class ListViewSet(viewsets.ModelViewSet):
         list_2.save()
 
         return Response(status=status.HTTP_202_ACCEPTED)
-
-    def get_permissions(self):
-
-        if self.action == 'list':
-            return [IsAuthenticated()]
-
-        if self.action == 'create':
-            return [IsAuthorOrParticipantOrAdminForCreateList()]
-
-        if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
-                           'swap'):
-            return [(IsAuthor | IsParticipant | IsStaff)()]
 
 
 class BoardViewSet(viewsets.ModelViewSet):
@@ -344,7 +345,19 @@ class CardViewSet(viewsets.ModelViewSet):
     def get_serializer_context(self):
         return {'card_id': self.kwargs.get('pk')}
 
-    @action(detail=True, methods=['put', 'patch'])
+    def get_permissions(self):
+
+        if self.action == 'list':
+            return [IsAuthenticated()]
+
+        if self.action == 'create':
+            return [IsAuthorOrParticipantOrAdminForCreateCard()]
+
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
+                           'change_list', 'swap'):
+            return [(IsAuthor | IsParticipant | IsStaff)()]
+
+    @action(detail=True, methods=['post'])
     def change_list(self, request, **kwargs):
         card = get_object_or_404(Card, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, card)
@@ -394,13 +407,11 @@ class CardViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=False, methods=['post'])
     def swap(self, request, **kwargs):
-        card_1 = get_object_or_404(Card, id=kwargs.get('pk'))
+        card_1 = get_object_or_404(Card, id=request.data['card_1_id'])
+        card_2 = get_object_or_404(Card, id=request.data['card_2_id'])
         self.check_object_permissions(self.request, card_1)
-
-        card_2_id = request.data['id']
-        card_2 = get_object_or_404(Card, id=card_2_id)
 
         if card_1.list != card_2.list:
             return Response({
@@ -414,15 +425,3 @@ class CardViewSet(viewsets.ModelViewSet):
         card_2.save()
 
         return Response(status=status.HTTP_202_ACCEPTED)
-
-    def get_permissions(self):
-
-        if self.action == 'list':
-            return [IsAuthenticated()]
-
-        if self.action == 'create':
-            return [IsAuthorOrParticipantOrAdminForCreateCard()]
-
-        if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
-                           'change_list', 'swap'):
-            return [(IsAuthor | IsParticipant | IsStaff)()]

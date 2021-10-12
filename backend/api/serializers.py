@@ -123,16 +123,7 @@ class BoardSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         current_user = self.context.get('request').user
 
-        board = Board.objects.create(author=current_user, **validated_data)
-        board.participants.add(current_user)
-
-        participant_in_board = ParticipantInBoard.objects.get(
-            board=board,
-            participant=current_user)
-        participant_in_board.is_moderator = True
-        participant_in_board.save()
-
-        for tag in Tag.objects.all():
-            TagInBoard.objects.create(board=board, tag=tag)
+        board = Board.objects.create_board(author=current_user,
+                                           **validated_data)
 
         return board

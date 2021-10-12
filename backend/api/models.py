@@ -24,6 +24,26 @@ class Tag(models.Model):
         return self.name
 
 
+class BoardManager(models.Manager):
+
+    def create_board(self, author, **kwargs):
+        current_user = author
+
+        board = Board.objects.create(author=current_user, **kwargs)
+        board.participants.add(current_user)
+
+        participant_in_board = ParticipantInBoard.objects.get(
+            board=board,
+            participant=current_user)
+        participant_in_board.is_moderator = True
+        participant_in_board.save()
+
+        for tag in Tag.objects.all():
+            TagInBoard.objects.create(board=board, tag=tag)
+
+        return board
+
+
 class Board(models.Model):
     name = models.CharField(max_length=50,
                             verbose_name='Название',
@@ -50,6 +70,8 @@ class Board(models.Model):
                                   blank=True,
                                   verbose_name='Тег',
                                   )
+
+    objects = BoardManager()
 
     class Meta:
         verbose_name = 'Доска'

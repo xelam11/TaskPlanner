@@ -3,14 +3,14 @@ from rest_framework import serializers
 from users.serializers import CustomUserSerializer
 
 from .models import (Board, List, Favorite, ParticipantRequest,
-                     ParticipantInBoard, Tag, TagInBoard, Card)
+                     ParticipantInBoard, Card)
 
 
-class TagSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Tag
-        fields = ('id', 'name', 'color')
+# class TagSerializer(serializers.ModelSerializer):
+#
+#     class Meta:
+#         model = Tag
+#         fields = ('id', 'name', 'color')
 
 
 class CardSerializer(serializers.ModelSerializer):
@@ -38,12 +38,12 @@ class CardSerializer(serializers.ModelSerializer):
 
         return data
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        participants_data = CustomUserSerializer(
-            instance.participants.all(), many=True).data
-
-        return {**data, 'participants': participants_data}
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
+    #     participants_data = CustomUserSerializer(
+    #         instance.participants.all(), many=True).data
+    #
+    #     return {**data, 'participants': participants_data}
 
 
 class ListSerializer(serializers.ModelSerializer):
@@ -70,11 +70,11 @@ class ParticipantRequestSerializer(serializers.ModelSerializer):
         fields = ('id', 'board', 'participant')
 
 
-class TagInBoardSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = TagInBoard
-        fields = ('id', 'tag', 'board', 'content')
+# class TagInBoardSerializer(serializers.ModelSerializer):
+#
+#     class Meta:
+#         model = TagInBoard
+#         fields = ('id', 'tag', 'board', 'content')
 
 
 class BoardSerializer(serializers.ModelSerializer):
@@ -87,8 +87,7 @@ class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ('id', 'name', 'description', 'author', 'is_favored',
-                  'is_author', 'is_participant', 'participants', 'lists',
-                  'tags')
+                  'is_author', 'is_participant', 'participants', 'lists')
         read_only_fields = ('participants', 'tags')
 
     def get_author(self, board):

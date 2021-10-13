@@ -4,24 +4,51 @@ from django.db import models
 from users.models import CustomUser
 
 
-class Tag(models.Model):
-    name = models.CharField(max_length=20,
-                            verbose_name='Название цвета',
-                            help_text='Напишите название цвета',
-                            unique=True
-                            )
-    color = models.CharField(max_length=7,
-                             verbose_name='Код цвета (HEX)',
-                             help_text='Напишите код цвета (HEX)',
-                             unique=True,
-                             )
-
-    class Meta:
-        verbose_name = 'Тег'
-        verbose_name_plural = 'Теги'
-
-    def __str__(self):
-        return self.name
+# class Tag(models.Model):
+#     name = models.CharField(max_length=20,
+#                             verbose_name='Название цвета',
+#                             help_text='Напишите название цвета',
+#                             unique=True
+#                             )
+#     color = models.CharField(max_length=7,
+#                              verbose_name='Код цвета (HEX)',
+#                              help_text='Напишите код цвета (HEX)',
+#                              unique=True,
+#                              )
+#
+#     class Meta:
+#         verbose_name = 'Тег'
+#         verbose_name_plural = 'Теги'
+#
+#     def __str__(self):
+#         return self.name
+#
+# class Tag(models.Model):
+#
+#     class Color(models.IntegerChoices):
+#         RED = 1
+#         BLUE = 2
+#         GREEN = 3
+#
+#     color_to_hex = {
+#         Color.RED: '#yellow',
+#         Color.BLUE: '#hhlhdf',
+#         Color.GREEN: '#hdsfsf',
+#     }
+#
+#     name = models.CharField(max_length=128)
+#     color = models.PositiveSmallIntegerField(choices=Color.choices)
+#
+#     @property
+#     def hex(self):
+#         return Tag.color_to_hex[self.color]
+#
+#     class Meta:
+#         verbose_name = 'Тег'
+#         verbose_name_plural = 'Теги'
+#
+#     def __str__(self):
+#         return self.name
 
 
 class BoardManager(models.Manager):
@@ -38,8 +65,8 @@ class BoardManager(models.Manager):
         participant_in_board.is_moderator = True
         participant_in_board.save()
 
-        for tag in Tag.objects.all():
-            TagInBoard.objects.create(board=board, tag=tag)
+        # for tag in Tag.objects.all():
+        #     TagInBoard.objects.create(board=board, tag=tag)
 
         return board
 
@@ -64,12 +91,11 @@ class Board(models.Model):
                                           blank=True,
                                           verbose_name='Участники',
                                           )
-    tags = models.ManyToManyField(Tag,
-                                  through='TagInBoard',
-                                  related_name='boards',
-                                  blank=True,
-                                  verbose_name='Тег',
-                                  )
+    # tags = models.ManyToManyField(Tag,
+    #                               related_name='boards',
+    #                               blank=True,
+    #                               verbose_name='Тег',
+    #                               )
 
     objects = BoardManager()
 
@@ -151,29 +177,29 @@ class ParticipantRequest(models.Model):
                 f'запрашиваемый пользователь: {self.participant}')
 
 
-class TagInBoard(models.Model):
-    tag = models.ForeignKey(Tag,
-                            on_delete=models.CASCADE,
-                            verbose_name='Тег',
-                            )
-    board = models.ForeignKey(Board,
-                              on_delete=models.CASCADE,
-                              verbose_name='Доска'
-                              )
-    content = models.CharField(max_length=20,
-                               blank=True,
-                               default='',
-                               verbose_name='Содержание',
-                               help_text='Напишите содержание')
-
-    class Meta:
-        verbose_name = 'Тег в доске'
-        verbose_name_plural = 'Теги в досках'
-
-    def __str__(self):
-        return f'Тег: {self.tag} (содержание: {self.content}) => {self.board}'
-
-
+# class TagInBoard(models.Model):
+#     tag = models.ForeignKey(Tag,
+#                             on_delete=models.CASCADE,
+#                             verbose_name='Тег',
+#                             )
+#     board = models.ForeignKey(Board,
+#                               on_delete=models.CASCADE,
+#                               verbose_name='Доска'
+#                               )
+#     content = models.CharField(max_length=20,
+#                                blank=True,
+#                                default='',
+#                                verbose_name='Содержание',
+#                                help_text='Напишите содержание')
+#
+#     class Meta:
+#         verbose_name = 'Тег в доске'
+#         verbose_name_plural = 'Теги в досках'
+#
+#     def __str__(self):
+#         return f'Тег: {self.tag} (содержание: {self.content}) => {self.board}'
+#
+#
 class List(models.Model):
     name = models.CharField(max_length=50,
                             verbose_name='Название',

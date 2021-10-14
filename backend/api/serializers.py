@@ -3,7 +3,7 @@ from rest_framework import serializers
 from users.serializers import CustomUserSerializer
 
 from .models import (Board, List, Favorite, ParticipantRequest,
-                     ParticipantInBoard, Card)
+                     ParticipantInBoard, Card, FileInCard)
 
 
 # class TagSerializer(serializers.ModelSerializer):
@@ -13,7 +13,16 @@ from .models import (Board, List, Favorite, ParticipantRequest,
 #         fields = ('id', 'name', 'color')
 
 
+class FileInCardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FileInCard
+        fields = ('id', 'card', 'file')
+        read_only_fields = ('card', )
+
+
 class CardSerializer(serializers.ModelSerializer):
+    files = FileInCardSerializer(many=True, read_only=True)
 
     class Meta:
         model = Card

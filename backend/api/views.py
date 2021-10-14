@@ -7,14 +7,15 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
-                     ParticipantInBoard, Card)
+                     ParticipantInBoard, Card, FileInCard)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateList,
                           IsModerator,
                           IsAuthorOrParticipantOrAdminForCreateCard)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer,
-                          CardSerializer, ParticipantInBoardSerializer)
+                          CardSerializer, ParticipantInBoardSerializer,
+                          FileInCardSerializer)
 from users.models import CustomUser
 
 
@@ -324,7 +325,14 @@ class RequestViewSet(viewsets.GenericViewSet,
 
 class CardViewSet(viewsets.ModelViewSet):
     queryset = Card.objects.all()
-    serializer_class = CardSerializer
+
+    def get_serializer_class(self):
+
+        if self.action == 'file':
+            return FileInCardSerializer
+
+        else:
+            return CardSerializer
 
     def perform_create(self, serializer):
         list_ = get_object_or_404(List, id=self.request.data['list'])
@@ -354,7 +362,7 @@ class CardViewSet(viewsets.ModelViewSet):
             return [IsAuthorOrParticipantOrAdminForCreateCard()]
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
-                           'change_list', 'swap'):
+                           'change_list', 'swap', 'file'):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
     # @action(detail=True)
@@ -435,3 +443,25 @@ class CardViewSet(viewsets.ModelViewSet):
         card_2.save()
 
         return Response(status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=['post', 'delete'])
+    def file(self, request, **kwargs):
+        card = get_object_or_404(Card, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, card)
+
+        if request.method == 'POST':
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            file = self.request.data['file']
+            FileInCard.objects.create(card=card, file=file)
+
+            return Response(status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            file_in_card = get_object_or_404(FileInCard,
+                                             id=self.request.data['id']
+                                             )
+            file_in_card.delete()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)

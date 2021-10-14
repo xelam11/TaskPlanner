@@ -249,11 +249,6 @@ class Card(models.Model):
     #                               blank=True,
     #                               verbose_name='Тег',
     #                               )
-    files = models.FileField(upload_to='cards',
-                             blank=True,
-                             verbose_name='Файл',
-                             help_text='Загрузите файл',
-                             )
     position = models.PositiveSmallIntegerField(
         verbose_name='Номер позиции на листе',
         blank=True,
@@ -268,6 +263,24 @@ class Card(models.Model):
     def __str__(self):
         return self.name
 
+
+class FileInCard(models.Model):
+    file = models.FileField(upload_to='card_files',
+                            verbose_name='Файл',
+                            help_text='Загрузите файл',
+                            )
+    card = models.ForeignKey(Card,
+                             on_delete=models.CASCADE,
+                             related_name='files',
+                             verbose_name='Карточка'
+                             )
+
+    class Meta:
+        verbose_name = 'Файл в карточке'
+        verbose_name_plural = 'Файлы в карточках'
+
+    def __str__(self):
+        return f'Файл: {self.file} => {self.card}'
 #
 #
 # class Comment(models.Model):

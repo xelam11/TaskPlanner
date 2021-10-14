@@ -281,26 +281,28 @@ class FileInCard(models.Model):
 
     def __str__(self):
         return f'Файл: {self.file} => {self.card}'
-#
-#
-# class Comment(models.Model):
-#     author = models.ForeignKey(CustomUser,
-#                                on_delete=models.CASCADE,
-#                                related_name='comments',
-#                                verbose_name='Автор',
-#                                )
-#     text = models.TextField(verbose_name='Текст',
-#                             help_text='Напишите текст комментария',
-#                             )
-#     card = models.CharField(Card,
-#                             related_name='comments',
-#                             verbose_name='Карточка',
-#                             )
-#     pub_date = models.DateTimeField(auto_now_add=True)
-#
-#     class Meta:
-#         verbose_name = 'Комментарий'
-#         verbose_name_plural = 'Комментарии'
-#
-#     def __str__(self):
-#         return self.text
+
+
+class Comment(models.Model):
+    author = models.ForeignKey(CustomUser,
+                               on_delete=models.CASCADE,
+                               related_name='comments',
+                               verbose_name='Автор',
+                               )
+    text = models.TextField(verbose_name='Текст',
+                            help_text='Напишите текст комментария',
+                            )
+    card = models.ForeignKey(Card,
+                             on_delete=models.CASCADE,
+                             related_name='comments',
+                             verbose_name='Карточка',
+                             )
+    pub_date = models.DateTimeField(auto_now_add=True,
+                                    verbose_name='Дата добавления')
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return self.text[:30]

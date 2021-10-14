@@ -3,7 +3,7 @@ from rest_framework import serializers
 from users.serializers import CustomUserSerializer
 
 from .models import (Board, List, Favorite, ParticipantRequest,
-                     ParticipantInBoard, Card, FileInCard)
+                     ParticipantInBoard, Card, FileInCard, Comment)
 
 
 # class TagSerializer(serializers.ModelSerializer):
@@ -11,6 +11,18 @@ from .models import (Board, List, Favorite, ParticipantRequest,
 #     class Meta:
 #         model = Tag
 #         fields = ('id', 'name', 'color')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'card', 'pub_date')
+        read_only_fields = ('card', 'pub_date')
+
+    def get_author(self, comment):
+        return CustomUserSerializer(comment.author).data
 
 
 class FileInCardSerializer(serializers.ModelSerializer):
@@ -23,11 +35,12 @@ class FileInCardSerializer(serializers.ModelSerializer):
 
 class CardSerializer(serializers.ModelSerializer):
     files = FileInCardSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Card
         fields = ('id', 'name', 'description', 'list', 'position',
-                  'participants', 'files')
+                  'participants', 'files', 'comments')
         read_only_fields = ('list', 'position')
 
     def validate(self, data):

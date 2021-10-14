@@ -11,11 +11,12 @@ from .models import (Board, Favorite, List, ParticipantRequest,
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateList,
                           IsModerator,
-                          IsAuthorOrParticipantOrAdminForCreateCard)
+                          IsAuthorOrParticipantOrAdminForCreateCard,
+                          IsAuthorOrParticipantOrAdminForCreateComment)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer,
                           CardSerializer, ParticipantInBoardSerializer,
-                          FileInCardSerializer)
+                          FileInCardSerializer, CommentSerializer)
 from users.models import CustomUser
 
 
@@ -465,3 +466,23 @@ class CardViewSet(viewsets.ModelViewSet):
             file_in_card.delete()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
+        return card.comments
+
+    def perform_create(self, serializer):
+        card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
+        serializer.save(author=self.request.user, card=card)
+
+    def get_permissions(self):
+
+        if self.action == 'create':
+            return [IsAuthorOrParticipantOrAdminForCreateComment()]
+
+        else:
+            return [(IsAuthor | IsParticipant | IsStaff)()]

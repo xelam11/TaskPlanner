@@ -12,7 +12,8 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForListOrCard,
                           IsModerator,
                           IsAuthorOrParticipantOrAdminForCreateCard,
-                          IsAuthorOrParticipantOrAdminForCreateComment)
+                          IsAuthorOrParticipantOrAdminForComment,
+                          IsAuthorOfComment)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer,
                           CardSerializer, ParticipantInBoardSerializer,
@@ -527,20 +528,17 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         return card.comments
 
-    # def get_serializer_context(self):
-    #     return {'comment_id': self.kwargs.get('pk')}
-
     def perform_create(self, serializer):
         card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
         serializer.save(author=self.request.user, card=card)
 
     def get_permissions(self):
 
-        if self.action == 'create':
-            return [IsAuthorOrParticipantOrAdminForCreateComment()]
+        if self.action in ('list', 'create'):
+            return [IsAuthorOrParticipantOrAdminForComment()]
 
-        # if self.action in ('put', 'patch', 'delete'):
-        #     return [IsAuthorOfComment()]
-
-        else:
+        if self.action == 'retrieve':
             return [(IsAuthor | IsParticipant | IsStaff)()]
+
+        if self.action in ('update', 'partial_update', 'destroy'):
+            return [IsAuthorOfComment()]

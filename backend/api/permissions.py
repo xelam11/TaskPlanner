@@ -92,7 +92,7 @@ class IsAuthorOrParticipantOrAdminForCreateCard(permissions.BasePermission):
                     request.user.is_staff)
 
 
-class IsAuthorOrParticipantOrAdminForCreateComment(permissions.BasePermission):
+class IsAuthorOrParticipantOrAdminForComment(permissions.BasePermission):
 
     def has_permission(self, request, view):
         card = get_object_or_404(Card, id=view.kwargs.get('card_id'))
@@ -104,10 +104,7 @@ class IsAuthorOrParticipantOrAdminForCreateComment(permissions.BasePermission):
                     request.user.is_staff)
 
 
-# class IsAuthorOfComment(permissions.BasePermission):
-#
-#     def has_object_permission(self, request, view, obj):
-#         breakpoint()
-#         comment = get_object_or_404(Comment, id=view.kwargs.get('comment_id'))
-#
-#         return request.user == comment.author
+class IsAuthorOfComment(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        return request.user == obj.author

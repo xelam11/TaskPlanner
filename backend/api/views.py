@@ -9,11 +9,9 @@ from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
                      ParticipantInBoard, Card, FileInCard, Comment)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
-                          IsAuthorOrParticipantOrAdminForCreateList,
-                          IsModerator,
+                          IsAuthorOrParticipantOrAdminForList, IsModerator,
                           IsAuthorOrParticipantOrAdminForCreateCard,
-                          IsAuthorOrParticipantOrAdminForCreateComment,
-                          IsAuthorOfComment)
+                          IsAuthorOrParticipantOrAdminForCreateComment)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer,
                           CardSerializer, ParticipantInBoardSerializer,
@@ -29,8 +27,15 @@ from users.models import CustomUser
 
 
 class ListViewSet(viewsets.ModelViewSet):
-    queryset = List.objects.all()
     serializer_class = ListSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.is_superuser or user.is_staff:
+            return List.objects.all()
+
+        return List.objects.filter(board=self.request.data['board'])
 
     def perform_create(self, serializer):
         board = get_object_or_404(Board, id=self.request.data['board'])
@@ -50,11 +55,8 @@ class ListViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
 
-        if self.action == 'list':
-            return [IsAuthenticated()]
-
-        if self.action == 'create':
-            return [IsAuthorOrParticipantOrAdminForCreateList()]
+        if self.action in ('list', 'create'):
+            return [IsAuthorOrParticipantOrAdminForList()]
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
                            'swap'):
@@ -287,6 +289,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
         qs_participants = ParticipantInBoard.objects.filter(board=board)
+        # self.filter_queryset(self.get_queryset())
 
         serializer = self.get_serializer(qs_participants, many=True)
 

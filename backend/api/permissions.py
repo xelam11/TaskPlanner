@@ -46,15 +46,22 @@ class IsStaff(permissions.BasePermission):
         return request.user.is_staff
 
 
-class IsAuthorOrParticipantOrAdminForCreateList(permissions.BasePermission):
+class IsAuthorOrParticipantOrAdminForList(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        board = get_object_or_404(Board, id=request.data['board'])
+        board_id = request.data.get('board', None)
 
-        if request.user.is_authenticated:
-            return (request.user == board.author or
-                    board.participants.filter(id=request.user.id).exists() or
-                    request.user.is_staff)
+        if board_id is None:
+            if request.user.is_authenticated:
+                return request.user.is_staff
+
+        if board_id:
+            board = get_object_or_404(Board, id=board_id)
+
+            if request.user.is_authenticated:
+                return (request.user == board.author or
+                        board.participants.filter(id=request.user.id).exists()
+                        or request.user.is_staff)
 
 
 class IsRecipient(permissions.BasePermission):

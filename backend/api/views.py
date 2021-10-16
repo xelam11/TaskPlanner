@@ -9,7 +9,8 @@ from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
                      ParticipantInBoard, Card, FileInCard, Comment)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
-                          IsAuthorOrParticipantOrAdminForList, IsModerator,
+                          IsAuthorOrParticipantOrAdminForListOrCard,
+                          IsModerator,
                           IsAuthorOrParticipantOrAdminForCreateCard,
                           IsAuthorOrParticipantOrAdminForCreateComment)
 from .serializers import (BoardSerializer, ListSerializer,
@@ -56,7 +57,7 @@ class ListViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
-            return [IsAuthorOrParticipantOrAdminForList()]
+            return [IsAuthorOrParticipantOrAdminForListOrCard()]
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
                            'swap'):
@@ -331,7 +332,14 @@ class RequestViewSet(viewsets.GenericViewSet,
 
 
 class CardViewSet(viewsets.ModelViewSet):
-    queryset = Card.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.is_superuser or user.is_staff:
+            return Card.objects.all()
+
+        return Card.objects.filter(list__board=self.request.data['board'])
 
     def get_serializer_class(self):
 
@@ -369,7 +377,7 @@ class CardViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
 
         if self.action == 'list':
-            return [IsAuthenticated()]
+            return [IsAuthorOrParticipantOrAdminForListOrCard()]
 
         if self.action == 'create':
             return [IsAuthorOrParticipantOrAdminForCreateCard()]

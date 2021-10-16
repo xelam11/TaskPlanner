@@ -46,7 +46,7 @@ class IsStaff(permissions.BasePermission):
         return request.user.is_staff
 
 
-class IsAuthorOrParticipantOrAdminForList(permissions.BasePermission):
+class IsAuthorOrParticipantOrAdminForListOrCard(permissions.BasePermission):
 
     def has_permission(self, request, view):
         board_id = request.data.get('board', None)

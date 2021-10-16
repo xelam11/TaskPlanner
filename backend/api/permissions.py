@@ -99,7 +99,8 @@ class IsAuthorOrParticipantOrAdminForCreateCard(permissions.BasePermission):
                     request.user.is_staff)
 
 
-class IsAuthorOrParticipantOrAdminForComment(permissions.BasePermission):
+class IsAuthorOrParticipantOrAdminForCommentAndCheckList(permissions.
+                                                         BasePermission):
 
     def has_permission(self, request, view):
         card = get_object_or_404(Card, id=view.kwargs.get('card_id'))

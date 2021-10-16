@@ -12,7 +12,7 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForListOrCard,
                           IsModerator,
                           IsAuthorOrParticipantOrAdminForCreateCard,
-                          IsAuthorOrParticipantOrAdminForComment,
+                          IsAuthorOrParticipantOrAdminForCommentAndCheckList,
                           IsAuthorOfComment)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer,
@@ -564,7 +564,28 @@ class CheckListViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
-            return [IsAuthorOrParticipantOrAdminForComment()]
+            return [IsAuthorOrParticipantOrAdminForCommentAndCheckList()]
 
-        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
+                           'switch_is_active'):
             return [(IsAuthor | IsParticipant | IsStaff)()]
+
+    @action(detail=True, methods=['post'])
+    def switch_is_active(self, request, **kwargs):
+        check_list = get_object_or_404(CheckList, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, check_list)
+
+        if check_list.is_active:
+            check_list.is_active = False
+            check_list.save()
+
+            return Response(
+                {'status': 'success',
+                 'message': 'Выполнено!'}, status=status.HTTP_202_ACCEPTED)
+
+        check_list.is_active = True
+        check_list.save()
+
+        return Response(
+            {'status': 'success',
+             'message': 'Не выполнено!'}, status=status.HTTP_202_ACCEPTED)

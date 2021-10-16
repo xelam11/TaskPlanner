@@ -7,12 +7,13 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
-                     ParticipantInBoard, Card, FileInCard)
+                     ParticipantInBoard, Card, FileInCard, Comment)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateList,
                           IsModerator,
                           IsAuthorOrParticipantOrAdminForCreateCard,
-                          IsAuthorOrParticipantOrAdminForCreateComment)
+                          IsAuthorOrParticipantOrAdminForCreateComment,
+                          IsAuthorOfComment)
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer,
                           CardSerializer, ParticipantInBoardSerializer,
@@ -507,8 +508,16 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
+        user = self.request.user
         card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
+
+        if user.is_superuser or user.is_staff:
+            return Comment.objects.all()
+
         return card.comments
+
+    # def get_serializer_context(self):
+    #     return {'comment_id': self.kwargs.get('pk')}
 
     def perform_create(self, serializer):
         card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
@@ -518,6 +527,9 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         if self.action == 'create':
             return [IsAuthorOrParticipantOrAdminForCreateComment()]
+
+        # if self.action in ('put', 'patch', 'delete'):
+        #     return [IsAuthorOfComment()]
 
         else:
             return [(IsAuthor | IsParticipant | IsStaff)()]

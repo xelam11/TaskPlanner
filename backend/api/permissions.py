@@ -95,3 +95,12 @@ class IsAuthorOrParticipantOrAdminForCreateComment(permissions.BasePermission):
             return (request.user == board.author or
                     board.participants.filter(id=request.user.id).exists() or
                     request.user.is_staff)
+
+
+# class IsAuthorOfComment(permissions.BasePermission):
+#
+#     def has_object_permission(self, request, view, obj):
+#         breakpoint()
+#         comment = get_object_or_404(Comment, id=view.kwargs.get('comment_id'))
+#
+#         return request.user == comment.author

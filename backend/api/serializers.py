@@ -4,7 +4,7 @@ from rest_framework import serializers
 from users.serializers import CustomUserSerializer
 
 from .models import (Board, List, Favorite, ParticipantRequest,
-                     ParticipantInBoard, Card, FileInCard, Comment)
+                     ParticipantInBoard, Card, FileInCard, Comment, CheckList)
 
 from users.models import CustomUser
 
@@ -14,6 +14,13 @@ from users.models import CustomUser
 #     class Meta:
 #         model = Tag
 #         fields = ('id', 'name', 'color')
+
+class CheckListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CheckList
+        fields = ('id', 'text', 'card', 'is_active')
+        read_only_fields = ('card', 'is_active')
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -40,11 +47,12 @@ class CardSerializer(serializers.ModelSerializer):
     files = FileInCardSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
     participants = CustomUserSerializer(many=True, read_only=True)
+    check_lists = CheckListSerializer(many=True, read_only=True)
 
     class Meta:
         model = Card
         fields = ('id', 'name', 'description', 'list', 'position',
-                  'participants', 'files', 'comments')
+                  'participants', 'files', 'comments', 'check_lists')
         read_only_fields = ('list', 'position')
 
 

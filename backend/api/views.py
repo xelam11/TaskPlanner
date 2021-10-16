@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
-                     ParticipantInBoard, Card, FileInCard, Comment)
+                     ParticipantInBoard, Card, FileInCard, Comment, CheckList)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForListOrCard,
                           IsModerator,
@@ -19,7 +19,8 @@ from .serializers import (BoardSerializer, ListSerializer,
                           CardSerializer, ParticipantInBoardSerializer,
                           FileInCardSerializer, CommentSerializer,
                           AddParticipantToCardSerializer,
-                          RemoveParticipantFromCardSerializer)
+                          RemoveParticipantFromCardSerializer,
+                          CheckListSerializer)
 from users.models import CustomUser
 
 
@@ -542,3 +543,28 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         if self.action in ('update', 'partial_update', 'destroy'):
             return [IsAuthorOfComment()]
+
+
+class CheckListViewSet(viewsets.ModelViewSet):
+    serializer_class = CheckListSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
+
+        if user.is_superuser or user.is_staff:
+            return CheckList.objects.all()
+
+        return card.check_lists
+
+    def perform_create(self, serializer):
+        card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
+        serializer.save(card=card)
+
+    def get_permissions(self):
+
+        if self.action in ('list', 'create'):
+            return [IsAuthorOrParticipantOrAdminForComment()]
+
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+            return [(IsAuthor | IsParticipant | IsStaff)()]

@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 
-from .models import Board, List, ParticipantInBoard, Card, Comment
+from .models import Board, List, ParticipantInBoard, Card, Comment, CheckList
 
 
 class IsAuthor(permissions.BasePermission):
@@ -20,6 +20,9 @@ class IsAuthor(permissions.BasePermission):
         elif type(obj) is Comment:
             return obj.card.list.board.author == request.user
 
+        elif type(obj) is CheckList:
+            return obj.card.list.board.author == request.user
+
 
 class IsParticipant(permissions.BasePermission):
 
@@ -36,6 +39,10 @@ class IsParticipant(permissions.BasePermission):
                 id=request.user.id).exists()
 
         if type(obj) is Comment:
+            return obj.card.list.board.participants.filter(
+                id=request.user.id).exists()
+
+        if type(obj) is CheckList:
             return obj.card.list.board.participants.filter(
                 id=request.user.id).exists()
 

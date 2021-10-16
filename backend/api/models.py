@@ -306,3 +306,23 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text[:30]
+
+
+class CheckList(models.Model):
+    text = models.CharField(max_length=50,
+                            verbose_name='Текст',
+                            help_text='Напишите текст',
+                            )
+    card = models.ForeignKey(Card,
+                             on_delete=models.CASCADE,
+                             related_name='check_lists',
+                             verbose_name='Карточка',
+                             )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Чек-лист'
+        verbose_name_plural = 'Чек-листы'
+
+    def __str__(self):
+        return self.text

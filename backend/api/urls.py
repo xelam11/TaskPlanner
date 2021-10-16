@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (BoardViewSet, ListViewSet, RequestViewSet,
-                    CardViewSet, CommentViewSet)
+                    CardViewSet, CommentViewSet, CheckListViewSet)
 
 
 router = DefaultRouter()
@@ -14,6 +14,9 @@ router.register('cards', CardViewSet, basename='cards')
 router.register(r'cards/(?P<card_id>\d+)/comments',
                 CommentViewSet,
                 basename='comments')
+router.register(r'cards/(?P<card_id>\d+)/check-lists',
+                CheckListViewSet,
+                basename='check_lists')
 
 urlpatterns = [
     path('v1/', include(router.urls)),

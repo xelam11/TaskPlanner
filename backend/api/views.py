@@ -79,6 +79,10 @@ class BoardViewSet(viewsets.ModelViewSet):
                     'status': 'error',
                     'message': 'Вы уже добавили данную доску в избранное!'},
                     status=status.HTTP_400_BAD_REQUEST)
+            # serializer = self.get_serializer(data=request.data)
+            # serializer.is_valid(raise_exception=True)
+            #
+            # Favorite.objects.create(user=user, board=board)
 
             return Response(status=status.HTTP_201_CREATED)
 
@@ -321,12 +325,12 @@ class ListViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def swap(self, request, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         list_1 = get_object_or_404(List, id=request.data['list_1'])
         list_2 = get_object_or_404(List, id=request.data['list_2'])
         self.check_object_permissions(request, list_1)
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
         list_1.position, list_2.position = list_2.position, list_1.position
         list_1.save()

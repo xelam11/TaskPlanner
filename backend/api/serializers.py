@@ -97,6 +97,21 @@ class ListSerializer(serializers.ModelSerializer):
         read_only_fields = ('board', 'position')
 
 
+class SwapListsSerializer(serializers.Serializer):
+    list_1 = serializers.IntegerField()
+    list_2 = serializers.IntegerField()
+
+    def validate(self, data):
+        list_1 = get_object_or_404(List, id=data.get('list_1'))
+        list_2 = get_object_or_404(List, id=data.get('list_2'))
+
+        if list_1.board != list_2.board:
+            msg = 'Нельзя менять местами листы из разных досок!'
+            raise serializers.ValidationError(msg)
+
+        return data
+
+
 class ParticipantInBoardSerializer(serializers.ModelSerializer):
     participant = CustomUserSerializer(read_only=True)
 

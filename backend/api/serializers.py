@@ -1,9 +1,12 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from users.serializers import CustomUserSerializer
 
 from .models import (Board, List, Favorite, ParticipantRequest,
                      ParticipantInBoard, Card, FileInCard, Comment)
+
+from users.models import CustomUser
 
 
 # class TagSerializer(serializers.ModelSerializer):
@@ -36,6 +39,7 @@ class FileInCardSerializer(serializers.ModelSerializer):
 class CardSerializer(serializers.ModelSerializer):
     files = FileInCardSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
+    participants = CustomUserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Card
@@ -43,29 +47,37 @@ class CardSerializer(serializers.ModelSerializer):
                   'participants', 'files', 'comments')
         read_only_fields = ('list', 'position')
 
-    def validate(self, data):
-        participants = data.get('participants')
 
-        if participants is None:
-            return data
+class AddParticipantToCardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
 
-        card = Card.objects.get(id=self.context['card_id'])
+    def validate_id(self, participant_id):
+        participant = get_object_or_404(CustomUser, id=participant_id)
+        card = get_object_or_404(Card, id=self.context['card_id'])
         board = card.list.board
 
-        for participant in participants:
-            if not board.participants.filter(id=participant.id).exists():
-                msg = f"Пользователя '{participant}' нельзя добавить в " \
-                      f"карточку, т.к. он не является участником доски!"
-                raise serializers.ValidationError(msg)
+        if card.participants.filter(id=participant.id).exists():
+            msg = f"Пользователя '{participant}' нельзя добавить в "\
+                  f"карточку, т.к. он уже является ее участником!"
+            raise serializers.ValidationError(msg)
 
-        return data
+        if not board.participants.filter(id=participant.id).exists():
+            msg = f"Пользователя '{participant}' нельзя добавить в " \
+                  f"карточку, т.к. он не является участником доски!"
+            raise serializers.ValidationError(msg)
 
-    # def to_representation(self, instance):
-    #     data = super().to_representation(instance)
-    #     participants_data = CustomUserSerializer(
-    #         instance.participants.all(), many=True).data
-    #
-    #     return {**data, 'participants': participants_data}
+
+class RemoveParticipantFromCardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def validate_id(self, participant_id):
+        participant = get_object_or_404(CustomUser, id=participant_id)
+        card = get_object_or_404(Card, id=self.context['card_id'])
+
+        if not card.participants.filter(id=participant.id).exists():
+            msg = f"Пользователя '{participant}' нельзя удалить из "\
+                  f"карточки, т.к. он не является ее участником!"
+            raise serializers.ValidationError(msg)
 
 
 class ListSerializer(serializers.ModelSerializer):

@@ -396,7 +396,9 @@ class CardViewSet(viewsets.ModelViewSet):
         instance.delete()
 
     def get_serializer_context(self):
-        return {'card_id': self.kwargs.get('pk')}
+        context = super(CardViewSet, self).get_serializer_context()
+        context.update({'card_id': self.kwargs.get('pk')})
+        return context
 
     def get_permissions(self):
 

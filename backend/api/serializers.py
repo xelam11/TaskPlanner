@@ -48,12 +48,23 @@ class CardSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
     participants = CustomUserSerializer(many=True, read_only=True)
     check_lists = CheckListSerializer(many=True, read_only=True)
+    is_participant = serializers.SerializerMethodField()
 
     class Meta:
         model = Card
         fields = ('id', 'name', 'description', 'list', 'position',
-                  'participants', 'files', 'comments', 'check_lists')
+                  'is_participant', 'participants', 'files', 'comments',
+                  'check_lists')
         read_only_fields = ('list', 'position')
+
+    def get_is_participant(self, card):
+        request = self.context.get('request')
+        user = request.user
+
+        if request is None or request.user.is_anonymous:
+            return False
+
+        return card.participants.filter(id=user.id).exists()
 
 
 class AddParticipantToCardSerializer(serializers.Serializer):

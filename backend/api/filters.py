@@ -57,7 +57,16 @@ class BoardFilter(filters.FilterSet):
 class CardFilter(filters.FilterSet):
     name = filters.CharFilter(field_name='name', lookup_expr='contains')
     participants = filters.CharFilter(field_name='participants__username')
+    is_participant = filters.BooleanFilter(method='get_is_participant')
 
     class Meta:
         model = Card
         fields = ('name', 'participants__username')
+
+    def get_is_participant(self, queryset, name, value):
+        user = self.request.user
+
+        if value:
+            return queryset.filter(participants__id=user.id)
+
+        return queryset.exclude(participants__id=user.id)

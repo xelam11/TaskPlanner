@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .filters import BoardFilter
+from .filters import BoardFilter, CardFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
                      ParticipantInBoard, Card, FileInCard, Comment, CheckList)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
@@ -20,7 +20,10 @@ from .serializers import (BoardSerializer, ListSerializer,
                           FileInCardSerializer, CommentSerializer,
                           AddParticipantToCardSerializer,
                           RemoveParticipantFromCardSerializer,
-                          CheckListSerializer, SwapListsSerializer)
+                          CheckListSerializer, SwapListsSerializer,
+                          SendRequestSerializer,
+                          SwitchModeratorSerializer,
+                          DeleteParticipantSerializer)
 from users.models import CustomUser
 
 
@@ -46,8 +49,26 @@ class BoardViewSet(viewsets.ModelViewSet):
         if self.action == 'participants':
             return ParticipantInBoardSerializer
 
+        if self.action == 'send_request':
+            return SendRequestSerializer
+
+        if self.action == 'switch_moderator':
+            return SwitchModeratorSerializer
+
+        if self.action == 'delete_participant':
+            return DeleteParticipantSerializer
+
         else:
             return BoardSerializer
+
+    def get_serializer_context(self):
+        # context = super(BoardViewSet, self).get_serializer_context()
+        # context.update({'request': self.request,
+        #                 'board_id': self.kwargs.get('pk')})
+        # return context
+
+        return {'request': self.request,
+                'board_id': self.kwargs.get('pk')}
 
     def get_permissions(self):
 
@@ -62,6 +83,7 @@ class BoardViewSet(viewsets.ModelViewSet):
             return [(IsAuthor | IsStaff)()]
 
         if self.action in ('send_request', 'delete_participant'):
+            # сюда код заходит, а дальше нет!
             return [(IsAuthor | IsModerator | IsStaff)()]
 
     @action(detail=True, methods=['post', 'delete'])
@@ -79,10 +101,6 @@ class BoardViewSet(viewsets.ModelViewSet):
                     'status': 'error',
                     'message': 'Вы уже добавили данную доску в избранное!'},
                     status=status.HTTP_400_BAD_REQUEST)
-            # serializer = self.get_serializer(data=request.data)
-            # serializer.is_valid(raise_exception=True)
-            #
-            # Favorite.objects.create(user=user, board=board)
 
             return Response(status=status.HTTP_201_CREATED)
 
@@ -101,26 +119,16 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def send_request(self, request, **kwargs):
+        # serializer = SendRequestSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         user_email = request.data['email']
         participant = get_object_or_404(CustomUser, email=user_email)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
 
         if request.method == 'POST':
-
-            if request.user == participant:
-                return Response({
-                    'status': 'error',
-                    'message': 'Вы не можете отправить запрос самому себе!'},
-                    status=status.HTTP_400_BAD_REQUEST)
-
-            if board.participants.filter(id=participant.id).exists():
-                return Response({
-                    'status': 'error',
-                    'message': 'Вы не можете отправить запрос участнику доски!'
-                },
-                    status=status.HTTP_400_BAD_REQUEST)
-
             _, is_created = ParticipantRequest.objects.get_or_create(
                 participant=participant,
                 board=board)
@@ -149,6 +157,9 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def switch_moderator(self, request, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         user_id = request.data['id']
         participant = get_object_or_404(CustomUser, id=user_id)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
@@ -176,30 +187,33 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def delete_participant(self, request, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         user_id = request.data['id']
         participant = get_object_or_404(CustomUser, id=user_id)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
-        participant_in_board = get_object_or_404(ParticipantInBoard,
-                                                 board=board,
-                                                 participant=participant,
-                                                 )
-        if participant == board.author:
-            return Response({
-                'status': 'error',
-                'message': 'Автора доски нельзя исключить из участников!'},
-                status=status.HTTP_400_BAD_REQUEST)
+        # participant_in_board = get_object_or_404(ParticipantInBoard,
+        #                                          board=board,
+        #                                          participant=participant,
+        #                                          )
+        # if participant == board.author:
+        #     return Response({
+        #         'status': 'error',
+        #         'message': 'Автора доски нельзя исключить из участников!'},
+        #         status=status.HTTP_400_BAD_REQUEST)
 
         if request.user == board.author:
             board.participants.remove(participant)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        if participant_in_board.is_moderator:
-            return Response({
-                'status': 'error',
-                'message': 'Исключить модератора может только автор доски!'},
-                status=status.HTTP_400_BAD_REQUEST)
-
+        # if participant_in_board.is_moderator:
+        #     return Response({
+        #         'status': 'error',
+        #         'message': 'Исключить модератора может только автор доски!'},
+        #         status=status.HTTP_400_BAD_REQUEST)
+        #
         board.participants.remove(participant)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -340,6 +354,8 @@ class ListViewSet(viewsets.ModelViewSet):
 
 
 class CardViewSet(viewsets.ModelViewSet):
+    filter_backends = [DjangoFilterBackend, ]
+    filter_class = CardFilter
 
     def get_queryset(self):
         user = self.request.user

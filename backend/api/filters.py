@@ -1,6 +1,6 @@
 import django_filters as filters
 
-from .models import Board, ParticipantInBoard
+from .models import Board, ParticipantInBoard, Card
 
 
 class BoardFilter(filters.FilterSet):
@@ -52,3 +52,12 @@ class BoardFilter(filters.FilterSet):
 #
 #         else:
 #             return queryset.filter(is_moderator=False)
+
+
+class CardFilter(filters.FilterSet):
+    name = filters.CharFilter(field_name='name', lookup_expr='contains')
+    participants = filters.CharFilter(field_name='participants__username')
+
+    class Meta:
+        model = Card
+        fields = ('name', 'participants__username')

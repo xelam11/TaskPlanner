@@ -187,3 +187,74 @@ class BoardSerializer(serializers.ModelSerializer):
                                            **validated_data)
 
         return board
+
+
+class SendRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, email):
+        request = self.context['request']
+        current_user = request.user
+        participant = get_object_or_404(CustomUser, email=email)
+        board = get_object_or_404(Board, id=self.context['board_id'])
+
+        if current_user == participant:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Вы не можете отправить запрос самому себе!'
+            })
+
+        if board.participants.filter(id=participant.id).exists():
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Вы не можете отправить запрос участнику доски!'
+            })
+
+
+class SwitchModeratorSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def validate_id(self, user_id):
+        request = self.context['request']
+        current_user = request.user
+        participant = get_object_or_404(CustomUser, id=user_id)
+
+        if current_user == participant:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Автор доски не может перестать быть модератором!'
+            })
+
+
+class DeleteParticipantSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def validate_id(self, user_id):
+        request = self.context['request']
+        current_user = request.user
+        participant = get_object_or_404(CustomUser, id=user_id)
+        board = get_object_or_404(Board, id=self.context['board_id'])
+        participant_in_board = get_object_or_404(ParticipantInBoard,
+                                                 board=board,
+                                                 participant=participant,
+                                                 )
+
+        if current_user == participant:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Нельзя исключить самого себя!'
+            })
+
+        if participant == board.author:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Автора доски нельзя исключить из участников!'
+            })
+
+        if current_user is not board.author and \
+                participant_in_board.is_moderator:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Исключить модератора может только автор доски!'
+            })
+

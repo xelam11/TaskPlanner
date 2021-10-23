@@ -1,4 +1,5 @@
 import django_filters as filters
+from django.db.models import Q
 
 from .models import Board, ParticipantInBoard, Card
 
@@ -56,12 +57,17 @@ class BoardFilter(filters.FilterSet):
 
 class CardFilter(filters.FilterSet):
     name = filters.CharFilter(field_name='name', lookup_expr='contains')
-    participants = filters.CharFilter(field_name='participants__username')
+    first_name = filters.CharFilter(field_name='participants__first_name',
+                                    lookup_expr='contains')
+    last_name = filters.CharFilter(field_name='participants__last_name',
+                                   lookup_expr='contains')
+    username = filters.CharFilter(field_name='participants__username',
+                                  lookup_expr='contains')
     is_participant = filters.BooleanFilter(method='get_is_participant')
 
     class Meta:
         model = Card
-        fields = ('name', 'participants__username')
+        fields = ('name', )
 
     def get_is_participant(self, queryset, name, value):
         user = self.request.user

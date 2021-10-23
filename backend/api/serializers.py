@@ -269,3 +269,16 @@ class DeleteParticipantSerializer(serializers.Serializer):
                 'message': 'Исключить модератора может только автор доски!'
             })
 
+
+class SearchBoardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Board
+        fields = ('name', )
+
+
+class SearchCardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Card
+        fields = ('name', )

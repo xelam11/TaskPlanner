@@ -2,7 +2,8 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (BoardViewSet, ListViewSet, RequestViewSet,
-                    CardViewSet, CommentViewSet, CheckListViewSet)
+                    CardViewSet, CommentViewSet, CheckListViewSet,
+                    SearchAPIView)
 
 
 router = DefaultRouter()
@@ -20,4 +21,5 @@ router.register(r'cards/(?P<card_id>\d+)/check-lists',
 
 urlpatterns = [
     path('v1/', include(router.urls)),
+    path('v1/search/', SearchAPIView.as_view(), name='search')
 ]

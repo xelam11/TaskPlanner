@@ -1,8 +1,11 @@
+# from itertools import chain
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
+from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .filters import BoardFilter, CardFilter
@@ -23,7 +26,8 @@ from .serializers import (BoardSerializer, ListSerializer,
                           CheckListSerializer, SwapListsSerializer,
                           SendRequestSerializer,
                           SwitchModeratorSerializer,
-                          DeleteParticipantSerializer)
+                          DeleteParticipantSerializer,
+                          SearchBoardSerializer, SearchCardSerializer)
 from users.models import CustomUser
 
 
@@ -613,3 +617,25 @@ class CheckListViewSet(viewsets.ModelViewSet):
         return Response(
             {'status': 'success',
              'message': 'Не выполнено!'}, status=status.HTTP_202_ACCEPTED)
+
+
+class SearchAPIView(APIView):
+
+    def get(self, request):
+        name = request.GET.get('name', None)
+        board_qs = Board.objects.filter(participants__id=self.request.user.id)
+        card_qs = Card.objects.filter(
+            list__board__participants__id=self.request.user.id)
+
+        if name:
+            board_qs = board_qs.filter(name__icontains=name)
+            card_qs = card_qs.filter(name__icontains=name)
+
+            return JsonResponse({
+                'board_qs': SearchBoardSerializer(instance=board_qs,
+                                                  many=True).data,
+                'card_qs': SearchCardSerializer(instance=card_qs,
+                                                many=True).data
+            })
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

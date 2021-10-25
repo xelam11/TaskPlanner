@@ -1,4 +1,3 @@
-# from itertools import chain
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
@@ -8,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .filters import BoardFilter, CardFilter
+from .filters import BoardFilter, CardFilter, ParticipantsFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
                      ParticipantInBoard, Card, FileInCard, Comment, CheckList)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
@@ -251,12 +250,13 @@ class BoardViewSet(viewsets.ModelViewSet):
     #
     #     return Response(status=status.HTTP_200_OK)
 
-    @action(detail=True)
+    @action(detail=True, filter_class=ParticipantsFilter)
     def participants(self, request, **kwargs):
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
-        qs_participants = ParticipantInBoard.objects.filter(board=board)
-        # self.filter_queryset(self.get_queryset())
+
+        qs_participants = self.filter_queryset(
+            ParticipantInBoard.objects.filter(board=board))
 
         serializer = self.get_serializer(qs_participants, many=True)
 

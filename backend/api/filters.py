@@ -39,20 +39,12 @@ class BoardFilter(filters.FilterSet):
         return queryset.exclude(participants__id=user.id)
 
 
-# class ParticipantsFilter(filters.FilterSet):
-#     is_moderator = filters.BooleanFilter(method='get_is_moderator')
-#
-#     class Meta:
-#         model = ParticipantInBoard
-#         fields = ('is_moderator', )
-#
-#     def get_is_moderator(self, queryset, name, value):
-#         breakpoint()
-#         if value:
-#             return queryset.filter(is_moderator=True)
-#
-#         else:
-#             return queryset.filter(is_moderator=False)
+class ParticipantsFilter(filters.FilterSet):
+
+    class Meta:
+        model = ParticipantInBoard
+        fields = ('is_moderator', )
+
 
 
 class CardFilter(filters.FilterSet):

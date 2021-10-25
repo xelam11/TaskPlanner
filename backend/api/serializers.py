@@ -221,6 +221,8 @@ class SendRequestSerializer(serializers.Serializer):
                 'message': 'Вы не можете отправить запрос участнику доски!'
             })
 
+        return email
+
 
 class SwitchModeratorSerializer(serializers.Serializer):
     id = serializers.IntegerField()

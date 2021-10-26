@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
+    'django_cleanup.apps.CleanupConfig',
     'djoser',
     'users',
     'api',
@@ -105,6 +106,7 @@ DJOSER = {
     'SERIALIZERS': {
         'user': 'users.serializers.CustomUserSerializer',
         'current_user': 'users.serializers.CustomUserSerializer',
+        'user_create': 'users.serializers.CustomUserSerializer',
     },
 }
 

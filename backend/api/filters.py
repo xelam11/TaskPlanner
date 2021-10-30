@@ -1,5 +1,4 @@
 import django_filters as filters
-from django.db.models import Q
 
 from .models import Board, ParticipantInBoard, Card
 
@@ -44,7 +43,6 @@ class ParticipantsFilter(filters.FilterSet):
     class Meta:
         model = ParticipantInBoard
         fields = ('is_moderator', )
-
 
 
 class CardFilter(filters.FilterSet):

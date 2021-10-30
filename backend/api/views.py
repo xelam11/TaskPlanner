@@ -38,6 +38,7 @@ from users.models import CustomUser
 class BoardViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, ]
     filter_class = BoardFilter
+    serializer_class = BoardSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -47,31 +48,31 @@ class BoardViewSet(viewsets.ModelViewSet):
 
         return Board.objects.filter(participants__id=self.request.user.id)
 
-    def get_serializer_class(self):
+    # def get_serializer_class(self):
+    #
+    #     if self.action == 'participants':
+    #         return ParticipantInBoardSerializer
+    #
+    #     if self.action == 'send_request':
+    #         return SendRequestSerializer
+    #
+    #     if self.action == 'switch_moderator':
+    #         return SwitchModeratorSerializer
+    #
+    #     if self.action == 'delete_participant':
+    #         return DeleteParticipantSerializer
+    #
+    #     else:
+    #         return BoardSerializer
 
-        if self.action == 'participants':
-            return ParticipantInBoardSerializer
-
-        if self.action == 'send_request':
-            return SendRequestSerializer
-
-        if self.action == 'switch_moderator':
-            return SwitchModeratorSerializer
-
-        if self.action == 'delete_participant':
-            return DeleteParticipantSerializer
-
-        else:
-            return BoardSerializer
-
-    def get_serializer_context(self):
-        # context = super(BoardViewSet, self).get_serializer_context()
-        # context.update({'request': self.request,
-        #                 'board_id': self.kwargs.get('pk')})
-        # return context
-
-        return {'request': self.request,
-                'board_id': self.kwargs.get('pk')}
+    # def get_serializer_context(self):
+    #     # context = super(BoardViewSet, self).get_serializer_context()
+    #     # context.update({'request': self.request,
+    #     #                 'board_id': self.kwargs.get('pk')})
+    #     # return context
+    #
+    #     return {'request': self.request,
+    #             'board_id': self.kwargs.get('pk')}
 
     def get_permissions(self):
 
@@ -122,8 +123,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def send_request(self, request, **kwargs):
-        # serializer = SendRequestSerializer(data=request.data)
-        serializer = self.get_serializer(data=request.data)
+        serializer = SendRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         user_email = request.data['email']
@@ -132,6 +132,21 @@ class BoardViewSet(viewsets.ModelViewSet):
         self.check_object_permissions(self.request, board)
 
         if request.method == 'POST':
+
+            if self.request.user == participant:
+                return Response({
+                    'status': 'error',
+                    'message': 'Вы не можете отправить запрос самому себе!'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if board.participants.filter(id=participant.id).exists():
+                return Response({
+                    'status': 'error',
+                    'message': 'Вы не можете отправить запрос участнику доски!'
+                }, status=status.HTTP_400_BAD_REQUEST
+                )
+
             _, is_created = ParticipantRequest.objects.get_or_create(
                 participant=participant,
                 board=board)
@@ -142,7 +157,7 @@ class BoardViewSet(viewsets.ModelViewSet):
                     'message': 'Вы уже пригласили этого пользователя!'},
                     status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
             count, _ = ParticipantRequest.objects.filter(
@@ -160,7 +175,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def switch_moderator(self, request, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = SwitchModeratorSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         user_id = request.data['id']
@@ -172,6 +187,12 @@ class BoardViewSet(viewsets.ModelViewSet):
                                                  participant=participant,
                                                  )
 
+        if request.user == participant:
+            return Response({
+                'status': 'error',
+                'message': 'Автор доски всегда должен быть моератором!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
         if participant_in_board.is_moderator:
             participant_in_board.is_moderator = False
             participant_in_board.save()
@@ -179,44 +200,44 @@ class BoardViewSet(viewsets.ModelViewSet):
             return Response(
                 {'status': 'success',
                  'message': 'Данный пользователь больше не модератор!'},
-                status=status.HTTP_202_ACCEPTED)
+                status=status.HTTP_200_OK)
 
         participant_in_board.is_moderator = True
         participant_in_board.save()
 
         return Response({'status': 'success',
                          'message': 'Данный пользователь теперь модератор!'},
-                        status=status.HTTP_202_ACCEPTED)
+                        status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def delete_participant(self, request, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = DeleteParticipantSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         user_id = request.data['id']
         participant = get_object_or_404(CustomUser, id=user_id)
         board = get_object_or_404(Board, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, board)
-        # participant_in_board = get_object_or_404(ParticipantInBoard,
-        #                                          board=board,
-        #                                          participant=participant,
-        #                                          )
-        # if participant == board.author:
-        #     return Response({
-        #         'status': 'error',
-        #         'message': 'Автора доски нельзя исключить из участников!'},
-        #         status=status.HTTP_400_BAD_REQUEST)
+        participant_in_board = get_object_or_404(ParticipantInBoard,
+                                                 board=board,
+                                                 participant=participant,
+                                                 )
+        if participant == board.author:
+            return Response({
+                'status': 'error',
+                'message': 'Автора доски нельзя исключить из участников!'},
+                status=status.HTTP_400_BAD_REQUEST)
 
         if request.user == board.author:
             board.participants.remove(participant)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        # if participant_in_board.is_moderator:
-        #     return Response({
-        #         'status': 'error',
-        #         'message': 'Исключить модератора может только автор доски!'},
-        #         status=status.HTTP_400_BAD_REQUEST)
-        #
+        if participant_in_board.is_moderator:
+            return Response({
+                'status': 'error',
+                'message': 'Исключить модератора может только автор доски!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
         board.participants.remove(participant)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -258,7 +279,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         qs_participants = self.filter_queryset(
             ParticipantInBoard.objects.filter(board=board))
 
-        serializer = self.get_serializer(qs_participants, many=True)
+        serializer = ParticipantInBoardSerializer(qs_participants, many=True)
 
         return Response(serializer.data)
 
@@ -638,4 +659,4 @@ class SearchAPIView(APIView):
                                                 many=True).data
             })
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return JsonResponse({'board_qs': [], 'card_qs': []})

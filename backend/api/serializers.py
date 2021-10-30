@@ -118,6 +118,10 @@ class ParticipantRequestSerializer(serializers.ModelSerializer):
 
 
 class BoardSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(max_length=None,
+                                    allow_empty_file=True,
+                                    allow_null=True,
+                                    required=False)
     author = serializers.SerializerMethodField(read_only=True)
     lists = ListSerializer(many=True, read_only=True)
     is_favored = serializers.SerializerMethodField()
@@ -126,7 +130,7 @@ class BoardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = ('id', 'name', 'description', 'author', 'is_favored',
+        fields = ('id', 'name', 'description', 'avatar', 'author', 'is_favored',
                   'is_author', 'is_participant', 'participants', 'lists')
         read_only_fields = ('participants', )
 

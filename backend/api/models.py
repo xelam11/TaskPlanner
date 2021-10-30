@@ -23,32 +23,6 @@ from users.models import CustomUser
 #     def __str__(self):
 #         return self.name
 #
-# class Tag(models.Model):
-#
-#     class Color(models.IntegerChoices):
-#         RED = 1
-#         BLUE = 2
-#         GREEN = 3
-#
-#     color_to_hex = {
-#         Color.RED: '#yellow',
-#         Color.BLUE: '#hhlhdf',
-#         Color.GREEN: '#hdsfsf',
-#     }
-#
-#     name = models.CharField(max_length=128)
-#     color = models.PositiveSmallIntegerField(choices=Color.choices)
-#
-#     @property
-#     def hex(self):
-#         return Tag.color_to_hex[self.color]
-#
-#     class Meta:
-#         verbose_name = 'Тег'
-#         verbose_name_plural = 'Теги'
-#
-#     def __str__(self):
-#         return self.name
 
 
 class BoardManager(models.Manager):
@@ -80,6 +54,11 @@ class Board(models.Model):
                                    help_text='Напишите описание',
                                    blank=True,
                                    )
+    avatar = models.ImageField(upload_to='board_avatars',
+                               blank=True,
+                               verbose_name='Аватар',
+                               help_text='Загрузите аватар'
+                               )
     author = models.ForeignKey(CustomUser,
                                on_delete=models.CASCADE,
                                related_name='boards_author',
@@ -326,3 +305,27 @@ class CheckList(models.Model):
 
     def __str__(self):
         return self.text
+
+
+# def handle_user_post_save(instance, created, **kwargs):
+#     if not created:
+#         # update
+#         if instance.avatar == "" and check if user has file stored on disk:
+#             delete the file from disk
+#
+# dct = {
+#     'User': {
+#         'signals': [handle_user_post_save, ]
+#     }
+# }
+#
+# def connect(fn, model):
+#     sct[model]['signals'].append(fn)
+#
+# save()
+# delete()
+#
+# def save():
+#     if model has signals:
+#         for each signal:
+#             run signal

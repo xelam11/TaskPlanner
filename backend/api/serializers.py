@@ -67,36 +67,18 @@ class CardSerializer(serializers.ModelSerializer):
         return card.participants.filter(id=user.id).exists()
 
 
-class AddParticipantToCardSerializer(serializers.Serializer):
+class ChangeListOfCardSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-
-    def validate_id(self, participant_id):
-        participant = get_object_or_404(CustomUser, id=participant_id)
-        card = get_object_or_404(Card, id=self.context['card_id'])
-        board = card.list.board
-
-        if card.participants.filter(id=participant.id).exists():
-            msg = f"Пользователя '{participant}' нельзя добавить в "\
-                  f"карточку, т.к. он уже является ее участником!"
-            raise serializers.ValidationError(msg)
-
-        if not board.participants.filter(id=participant.id).exists():
-            msg = f"Пользователя '{participant}' нельзя добавить в " \
-                  f"карточку, т.к. он не является участником доски!"
-            raise serializers.ValidationError(msg)
+    position = serializers.IntegerField()
 
 
-class RemoveParticipantFromCardSerializer(serializers.Serializer):
+class SwapCardsSerializer(serializers.Serializer):
+    card_1 = serializers.IntegerField()
+    card_2 = serializers.IntegerField()
+
+
+class ParticipantInCardSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-
-    def validate_id(self, participant_id):
-        participant = get_object_or_404(CustomUser, id=participant_id)
-        card = get_object_or_404(Card, id=self.context['card_id'])
-
-        if not card.participants.filter(id=participant.id).exists():
-            msg = f"Пользователя '{participant}' нельзя удалить из "\
-                  f"карточки, т.к. он не является ее участником!"
-            raise serializers.ValidationError(msg)
 
 
 class ListSerializer(serializers.ModelSerializer):

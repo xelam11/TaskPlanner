@@ -20,11 +20,10 @@ from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer,
                           CardSerializer, ParticipantInBoardSerializer,
                           FileInCardSerializer, CommentSerializer,
-                          AddParticipantToCardSerializer,
-                          RemoveParticipantFromCardSerializer,
+                          ParticipantInCardSerializer,
                           CheckListSerializer, SwapListsSerializer,
-                          SendRequestSerializer,
-                          SwitchModeratorSerializer,
+                          SendRequestSerializer, ChangeListOfCardSerializer,
+                          SwitchModeratorSerializer, SwapCardsSerializer,
                           DeleteParticipantSerializer,
                           SearchBoardSerializer, SearchCardSerializer)
 from users.models import CustomUser
@@ -356,6 +355,7 @@ class ListViewSet(viewsets.ModelViewSet):
 
 
 class CardViewSet(viewsets.ModelViewSet):
+    serializer_class = CardSerializer
     filter_backends = [DjangoFilterBackend, ]
     filter_class = CardFilter
 
@@ -367,19 +367,19 @@ class CardViewSet(viewsets.ModelViewSet):
 
         return Card.objects.filter(list__board=self.request.data['board'])
 
-    def get_serializer_class(self):
-
-        if self.action == 'file':
-            return FileInCardSerializer
-
-        if self.action == 'add_participant':
-            return AddParticipantToCardSerializer
-
-        if self.action == 'remove_participant':
-            return RemoveParticipantFromCardSerializer
-
-        else:
-            return CardSerializer
+    # def get_serializer_class(self):
+    #
+    #     if self.action == 'file':
+    #         return FileInCardSerializer
+    #
+    #     if self.action == 'add_participant':
+    #         return AddParticipantToCardSerializer
+    #
+    #     if self.action == 'remove_participant':
+    #         return RemoveParticipantFromCardSerializer
+    #
+    #     else:
+    #         return CardSerializer
 
     def perform_create(self, serializer):
         list_ = get_object_or_404(List, id=self.request.data['list'])
@@ -397,11 +397,6 @@ class CardViewSet(viewsets.ModelViewSet):
 
         instance.delete()
 
-    def get_serializer_context(self):
-        context = super(CardViewSet, self).get_serializer_context()
-        context.update({'card_id': self.kwargs.get('pk')})
-        return context
-
     def get_permissions(self):
 
         if self.action == 'list':
@@ -411,22 +406,14 @@ class CardViewSet(viewsets.ModelViewSet):
             return [IsAuthorOrParticipantOrAdminForCreateCard()]
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
-                           'change_list', 'swap', 'file', 'add_participant',
-                           'remove_participant'):
+                           'change_list', 'swap', 'file', 'participant'):
             return [(IsAuthor | IsParticipant | IsStaff)()]
-
-    # @action(detail=True)
-    # def participants(self, request, **kwargs):
-    #     card = get_object_or_404(Card, id=kwargs.get('pk'))
-    #     self.check_object_permissions(self.request, card)
-    #     qs_participants = card.participants.all()
-    #
-    #     serializer = self.get_serializer(qs_participants, many=True)
-    #
-    #     return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def change_list(self, request, **kwargs):
+        serializer = ChangeListOfCardSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         card = get_object_or_404(Card, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, card)
 
@@ -477,9 +464,18 @@ class CardViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def swap(self, request, **kwargs):
-        card_1 = get_object_or_404(Card, id=request.data['card_1_id'])
-        card_2 = get_object_or_404(Card, id=request.data['card_2_id'])
+        serializer = SwapCardsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        card_1 = get_object_or_404(Card, id=request.data['card_1'])
+        card_2 = get_object_or_404(Card, id=request.data['card_2'])
         self.check_object_permissions(self.request, card_1)
+
+        if card_1 == card_2:
+            return Response({
+                'status': 'error',
+                'message': 'Нельзя менять местами карточку с самой собой!'},
+                status=status.HTTP_400_BAD_REQUEST)
 
         if card_1.list != card_2.list:
             return Response({
@@ -492,7 +488,7 @@ class CardViewSet(viewsets.ModelViewSet):
         card_1.save()
         card_2.save()
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
     def file(self, request, **kwargs):
@@ -500,7 +496,7 @@ class CardViewSet(viewsets.ModelViewSet):
         self.check_object_permissions(self.request, card)
 
         if request.method == 'POST':
-            serializer = self.get_serializer(data=request.data)
+            serializer = FileInCardSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
             file = self.request.data['file']
@@ -516,31 +512,46 @@ class CardViewSet(viewsets.ModelViewSet):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'])
-    def add_participant(self, request, **kwargs):
+    @action(detail=True, methods=['post', 'delete'])
+    def participant(self, request, **kwargs):
+        serializer = ParticipantInCardSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         card = get_object_or_404(Card, id=kwargs.get('pk'))
+        board = card.list.board
         self.check_object_permissions(self.request, card)
         participant = get_object_or_404(CustomUser, id=request.data['id'])
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if request.method == 'POST':
 
-        card.participants.add(participant)
+            if card.participants.filter(id=participant.id).exists():
+                return Response({
+                    'status': 'error',
+                    'message':
+                        'Данный пользователь уже является участником карточки!'
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+            if not board.participants.filter(id=participant.id).exists():
+                return Response({
+                    'status': 'error',
+                    'message':
+                        'Данный пользователь не является участникм доски!'},
+                    status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['delete'])
-    def remove_participant(self, request, **kwargs):
-        card = get_object_or_404(Card, id=kwargs.get('pk'))
-        self.check_object_permissions(self.request, card)
-        participant = get_object_or_404(CustomUser, id=request.data['id'])
+            card.participants.add(participant)
+            return Response(status=status.HTTP_200_OK)
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if request.method == 'DELETE':
+            if not card.participants.filter(id=participant.id).exists():
+                return Response({
+                    'status': 'error',
+                    'message':
+                        'Данный пользователь не является участникм карточки!'},
+                    status=status.HTTP_400_BAD_REQUEST)
 
-        card.participants.remove(participant)
+            card.participants.remove(participant)
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

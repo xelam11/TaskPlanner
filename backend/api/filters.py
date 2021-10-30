@@ -46,6 +46,7 @@ class ParticipantsFilter(filters.FilterSet):
 
 
 class CardFilter(filters.FilterSet):
+    board = filters.CharFilter(field_name='list__board')
     name = filters.CharFilter(field_name='name', lookup_expr='contains')
     first_name = filters.CharFilter(field_name='participants__first_name',
                                     lookup_expr='contains')

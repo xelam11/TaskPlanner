@@ -11,7 +11,6 @@ from .filters import BoardFilter, CardFilter, ParticipantsFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
                      ParticipantInBoard, Card, FileInCard, Comment, CheckList)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
-                          IsAuthorOrParticipantOrAdminForListOrCard,
                           IsModerator,
                           IsAuthorOrParticipantOrAdminForCreateList,
                           IsAuthorOrParticipantOrAdminForCreateCard,
@@ -372,7 +371,8 @@ class CardViewSet(viewsets.ModelViewSet):
         if user.is_superuser or user.is_staff:
             return Card.objects.all()
 
-        return Card.objects.filter(list__board=self.request.data['board'])
+        return Card.objects.filter(
+            list__board__participants__id=self.request.user.id)
 
     def perform_create(self, serializer):
         list_ = get_object_or_404(List, id=self.request.data['list'])
@@ -393,7 +393,7 @@ class CardViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
 
         if self.action == 'list':
-            return [IsAuthorOrParticipantOrAdminForListOrCard()]
+            return [IsAuthenticated()]
 
         if self.action == 'create':
             return [IsAuthorOrParticipantOrAdminForCreateCard()]

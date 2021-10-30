@@ -16,6 +16,7 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCreateCard,
                           IsAuthorOrParticipantOrAdminForCommentAndCheckList,
                           IsAuthorOfComment)
+from .paginators import ParticipantsInBoardPaginator
 from .serializers import (BoardSerializer, ListSerializer,
                           ParticipantRequestSerializer,
                           CardSerializer, ParticipantInBoardSerializer,
@@ -251,9 +252,11 @@ class BoardViewSet(viewsets.ModelViewSet):
         qs_participants = self.filter_queryset(
             ParticipantInBoard.objects.filter(board=board))
 
-        serializer = ParticipantInBoardSerializer(qs_participants, many=True)
+        paginator = ParticipantsInBoardPaginator()
+        page = paginator.paginate_queryset(qs_participants, request)
+        serializer = ParticipantInBoardSerializer(page, many=True)
 
-        return Response(serializer.data)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class RequestViewSet(viewsets.GenericViewSet,
@@ -611,14 +614,14 @@ class CheckListViewSet(viewsets.ModelViewSet):
 
             return Response(
                 {'status': 'success',
-                 'message': 'Выполнено!'}, status=status.HTTP_202_ACCEPTED)
+                 'message': 'Выполнено!'}, status=status.HTTP_200_OK)
 
         check_list.is_active = True
         check_list.save()
 
         return Response(
             {'status': 'success',
-             'message': 'Не выполнено!'}, status=status.HTTP_202_ACCEPTED)
+             'message': 'Не выполнено!'}, status=status.HTTP_200_OK)
 
 
 class SearchAPIView(APIView):

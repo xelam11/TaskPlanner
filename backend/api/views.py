@@ -13,6 +13,7 @@ from .models import (Board, Favorite, List, ParticipantRequest,
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForListOrCard,
                           IsModerator,
+                          IsAuthorOrParticipantOrAdminForCreateList,
                           IsAuthorOrParticipantOrAdminForCreateCard,
                           IsAuthorOrParticipantOrAdminForCommentAndCheckList,
                           IsAuthorOfComment)
@@ -292,6 +293,8 @@ class RequestViewSet(viewsets.GenericViewSet,
 
 class ListViewSet(viewsets.ModelViewSet):
     serializer_class = ListSerializer
+    filter_backends = [DjangoFilterBackend, ]
+    filterset_fields = ['board']
 
     def get_queryset(self):
         user = self.request.user
@@ -299,7 +302,8 @@ class ListViewSet(viewsets.ModelViewSet):
         if user.is_superuser or user.is_staff:
             return List.objects.all()
 
-        return List.objects.filter(board=self.request.data['board'])
+        return List.objects.filter(
+            board__participants__id=self.request.user.id)
 
     def perform_create(self, serializer):
         board = get_object_or_404(Board, id=self.request.data['board'])
@@ -319,8 +323,11 @@ class ListViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
 
-        if self.action in ('list', 'create'):
-            return [IsAuthorOrParticipantOrAdminForListOrCard()]
+        if self.action == 'create':
+            return [IsAuthorOrParticipantOrAdminForCreateList()]
+
+        if self.action == 'list':
+            return [IsAuthenticated()]
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
                            'swap'):
@@ -366,20 +373,6 @@ class CardViewSet(viewsets.ModelViewSet):
             return Card.objects.all()
 
         return Card.objects.filter(list__board=self.request.data['board'])
-
-    # def get_serializer_class(self):
-    #
-    #     if self.action == 'file':
-    #         return FileInCardSerializer
-    #
-    #     if self.action == 'add_participant':
-    #         return AddParticipantToCardSerializer
-    #
-    #     if self.action == 'remove_participant':
-    #         return RemoveParticipantFromCardSerializer
-    #
-    #     else:
-    #         return CardSerializer
 
     def perform_create(self, serializer):
         list_ = get_object_or_404(List, id=self.request.data['list'])

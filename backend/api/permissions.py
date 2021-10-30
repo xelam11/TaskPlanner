@@ -87,6 +87,18 @@ class IsModerator(permissions.BasePermission):
         return participant_in_board.is_moderator
 
 
+class IsAuthorOrParticipantOrAdminForCreateList(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        board_id = request.data.get('board', None)
+        board = get_object_or_404(Board, id=board_id)
+
+        if request.user.is_authenticated:
+            return (request.user == board.author or
+                    board.participants.filter(id=request.user.id).exists()
+                    or request.user.is_staff)
+
+
 class IsAuthorOrParticipantOrAdminForCreateCard(permissions.BasePermission):
 
     def has_permission(self, request, view):

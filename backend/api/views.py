@@ -48,32 +48,6 @@ class BoardViewSet(viewsets.ModelViewSet):
 
         return Board.objects.filter(participants__id=self.request.user.id)
 
-    # def get_serializer_class(self):
-    #
-    #     if self.action == 'participants':
-    #         return ParticipantInBoardSerializer
-    #
-    #     if self.action == 'send_request':
-    #         return SendRequestSerializer
-    #
-    #     if self.action == 'switch_moderator':
-    #         return SwitchModeratorSerializer
-    #
-    #     if self.action == 'delete_participant':
-    #         return DeleteParticipantSerializer
-    #
-    #     else:
-    #         return BoardSerializer
-
-    # def get_serializer_context(self):
-    #     # context = super(BoardViewSet, self).get_serializer_context()
-    #     # context.update({'request': self.request,
-    #     #                 'board_id': self.kwargs.get('pk')})
-    #     # return context
-    #
-    #     return {'request': self.request,
-    #             'board_id': self.kwargs.get('pk')}
-
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
@@ -87,7 +61,6 @@ class BoardViewSet(viewsets.ModelViewSet):
             return [(IsAuthor | IsStaff)()]
 
         if self.action in ('send_request', 'delete_participant'):
-            # сюда код заходит, а дальше нет!
             return [(IsAuthor | IsModerator | IsStaff)()]
 
     @action(detail=True, methods=['post', 'delete'])
@@ -306,7 +279,7 @@ class RequestViewSet(viewsets.GenericViewSet,
         request_.board.participants.add(user)
         request_.delete()
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[IsRecipient])
     def refuse(self, request, **kwargs):
@@ -328,14 +301,6 @@ class ListViewSet(viewsets.ModelViewSet):
             return List.objects.all()
 
         return List.objects.filter(board=self.request.data['board'])
-
-    def get_serializer_class(self):
-
-        if self.action == 'swap':
-            return SwapListsSerializer
-
-        else:
-            return ListSerializer
 
     def perform_create(self, serializer):
         board = get_object_or_404(Board, id=self.request.data['board'])
@@ -364,18 +329,30 @@ class ListViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def swap(self, request, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = SwapListsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         list_1 = get_object_or_404(List, id=request.data['list_1'])
         list_2 = get_object_or_404(List, id=request.data['list_2'])
         self.check_object_permissions(request, list_1)
 
+        if list_1 == list_2:
+            return Response({
+                'status': 'error',
+                'message': 'Нельзя менять местами лист с самим собой!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        if list_1.board != list_2.board:
+            return Response({
+                'status': 'error',
+                'message': 'Нельзя менять местами листы из разных досок!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
         list_1.position, list_2.position = list_2.position, list_1.position
         list_1.save()
         list_2.save()
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(status=status.HTTP_200_OK)
 
 
 class CardViewSet(viewsets.ModelViewSet):

@@ -17,7 +17,8 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCommentAndCheckList,
                           IsAuthorOfComment)
 from .paginators import ParticipantsInBoardPaginator
-from .serializers import (BoardSerializer, ListSerializer,
+from .serializers import (BoardListAndCreateSerializer, BoardSerializer,
+                          ListSerializer,
                           ParticipantRequestSerializer,
                           CardSerializer, ParticipantInBoardSerializer,
                           FileInCardSerializer, CommentSerializer,
@@ -38,7 +39,6 @@ from users.models import CustomUser
 class BoardViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, ]
     filter_class = BoardFilter
-    serializer_class = BoardSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -47,6 +47,14 @@ class BoardViewSet(viewsets.ModelViewSet):
             return Board.objects.all()
 
         return Board.objects.filter(participants__id=self.request.user.id)
+
+    def get_serializer_class(self):
+
+        if self.action in ('list', 'create'):
+            return BoardListAndCreateSerializer
+
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+            return BoardSerializer
 
     def get_permissions(self):
 

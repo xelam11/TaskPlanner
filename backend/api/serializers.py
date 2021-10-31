@@ -125,17 +125,35 @@ class BoardSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField(read_only=True)
     lists = ListSerializer(many=True, read_only=True)
     is_favored = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Board
+        fields = ('id', 'name', 'description', 'avatar', 'author',
+                  'is_favored', 'participants', 'lists')
+        read_only_fields = ('participants', )
+
+    def get_author(self, board):
+        return CustomUserSerializer(board.author).data
+
+    def get_is_favored(self, board):
+        request = self.context.get('request')
+        user = request.user
+
+        if request is None or request.user.is_anonymous:
+            return False
+
+        return Favorite.objects.filter(board=board, user=user).exists()
+
+
+class BoardListAndCreateSerializer(serializers.ModelSerializer):
+    is_favored = serializers.SerializerMethodField()
     is_author = serializers.SerializerMethodField()
     is_participant = serializers.SerializerMethodField()
 
     class Meta:
         model = Board
-        fields = ('id', 'name', 'description', 'avatar', 'author', 'is_favored',
-                  'is_author', 'is_participant', 'participants', 'lists')
-        read_only_fields = ('participants', )
-
-    def get_author(self, board):
-        return CustomUserSerializer(board.author).data
+        fields = ('id', 'name', 'avatar', 'is_favored', 'is_author',
+                  'is_participant')
 
     def get_is_favored(self, board):
         request = self.context.get('request')

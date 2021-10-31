@@ -7,11 +7,11 @@ class BoardFilter(filters.FilterSet):
     is_favored = filters.BooleanFilter(method='get_is_favored')
     is_author = filters.BooleanFilter(method='get_is_author')
     is_participant = filters.BooleanFilter(method='get_is_participant')
-    name = filters.CharFilter(field_name='name', lookup_expr='contains')
+    # name = filters.CharFilter(field_name='name', lookup_expr='contains')
 
     class Meta:
         model = Board
-        fields = ('is_favored', 'is_author', 'is_participant', 'name')
+        fields = ('is_favored', 'is_author', 'is_participant')
 
     def get_is_favored(self, queryset, name, value):
         user = self.request.user

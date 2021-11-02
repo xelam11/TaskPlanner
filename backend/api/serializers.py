@@ -67,6 +67,24 @@ class CardSerializer(serializers.ModelSerializer):
         return card.participants.filter(id=user.id).exists()
 
 
+class CardListOrCreateSerializer(serializers.ModelSerializer):
+    is_participant = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Card
+        fields = ('id', 'name', 'is_participant', 'position', 'list',
+                  'participants', 'files', 'comments', 'check_lists')
+
+    def get_is_participant(self, card):
+        request = self.context.get('request')
+        user = request.user
+
+        if request is None or request.user.is_anonymous:
+            return False
+
+        return card.participants.filter(id=user.id).exists()
+
+
 class ChangeListOfCardSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     position = serializers.IntegerField()
@@ -82,7 +100,7 @@ class ParticipantInCardSerializer(serializers.Serializer):
 
 
 class ListSerializer(serializers.ModelSerializer):
-    cards = CardSerializer(many=True, read_only=True)
+    cards = CardListOrCreateSerializer(many=True, read_only=True)
 
     class Meta:
         model = List
@@ -145,7 +163,7 @@ class BoardSerializer(serializers.ModelSerializer):
         return Favorite.objects.filter(board=board, user=user).exists()
 
 
-class BoardListAndCreateSerializer(serializers.ModelSerializer):
+class BoardListOrCreateSerializer(serializers.ModelSerializer):
     is_favored = serializers.SerializerMethodField()
     is_author = serializers.SerializerMethodField()
     is_participant = serializers.SerializerMethodField()
@@ -223,5 +241,5 @@ class SearchCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Card
-        fields = ('name', 'list', 'participants', 'files', 'comments',
+        fields = ('id', 'name', 'list', 'participants', 'files', 'comments',
                   'check_lists')

@@ -17,10 +17,11 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsAuthorOrParticipantOrAdminForCommentAndCheckList,
                           IsAuthorOfComment)
 from .paginators import ParticipantsInBoardPaginator
-from .serializers import (BoardListAndCreateSerializer, BoardSerializer,
+from .serializers import (BoardListOrCreateSerializer, BoardSerializer,
                           ListSerializer,
                           ParticipantRequestSerializer,
-                          CardSerializer, ParticipantInBoardSerializer,
+                          CardSerializer, CardListOrCreateSerializer,
+                          ParticipantInBoardSerializer,
                           FileInCardSerializer, CommentSerializer,
                           ParticipantInCardSerializer,
                           CheckListSerializer, SwapListsSerializer,
@@ -51,7 +52,7 @@ class BoardViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
 
         if self.action in ('list', 'create'):
-            return BoardListAndCreateSerializer
+            return BoardListOrCreateSerializer
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
             return BoardSerializer
@@ -372,7 +373,6 @@ class ListViewSet(viewsets.ModelViewSet):
 
 
 class CardViewSet(viewsets.ModelViewSet):
-    serializer_class = CardSerializer
     filter_backends = [DjangoFilterBackend, ]
     filter_class = CardFilter
 
@@ -384,6 +384,14 @@ class CardViewSet(viewsets.ModelViewSet):
 
         return Card.objects.filter(
             list__board__participants__id=self.request.user.id)
+
+    def get_serializer_class(self):
+
+        if self.action in ('list', 'create'):
+            return CardListOrCreateSerializer
+
+        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+            return CardSerializer
 
     def perform_create(self, serializer):
         list_ = get_object_or_404(List, id=self.request.data['list'])

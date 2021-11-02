@@ -636,19 +636,19 @@ class SearchAPIView(APIView):
 
     def get(self, request):
         name = request.GET.get('name', None)
-        board_qs = Board.objects.filter(participants__id=self.request.user.id)
-        card_qs = Card.objects.filter(
+        boards = Board.objects.filter(participants__id=self.request.user.id)
+        cards = Card.objects.filter(
             list__board__participants__id=self.request.user.id)
 
         if name:
-            board_qs = board_qs.filter(name__icontains=name)
-            card_qs = card_qs.filter(name__icontains=name)
+            boards = boards.filter(name__icontains=name)
+            cards = cards.filter(name__icontains=name)
 
             return JsonResponse({
-                'board_qs': SearchBoardSerializer(instance=board_qs,
-                                                  many=True).data,
-                'card_qs': SearchCardSerializer(instance=card_qs,
-                                                many=True).data
+                'boards': SearchBoardSerializer(instance=boards,
+                                                many=True).data,
+                'cards': SearchCardSerializer(instance=cards,
+                                              many=True).data
             })
 
-        return JsonResponse({'board_qs': [], 'card_qs': []})
+        return JsonResponse({'boards': [], 'cards': []})

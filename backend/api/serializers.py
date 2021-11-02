@@ -206,11 +206,22 @@ class SearchBoardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = ('name', )
+        fields = ('id', 'name', 'avatar')
+
+
+class SearchListSerializer(serializers.ModelSerializer):
+    board = SearchBoardSerializer(read_only=True)
+
+    class Meta:
+        model = List
+        fields = ('id', 'name', 'board')
+        read_only_fields = ('board', )
 
 
 class SearchCardSerializer(serializers.ModelSerializer):
+    list = SearchListSerializer(read_only=True)
 
     class Meta:
         model = Card
-        fields = ('name', )
+        fields = ('name', 'list', 'participants', 'files', 'comments',
+                  'check_lists')

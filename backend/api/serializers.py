@@ -4,16 +4,19 @@ from rest_framework import serializers
 from users.serializers import CustomUserSerializer
 
 from .models import (Board, List, Favorite, ParticipantRequest,
-                     ParticipantInBoard, Card, FileInCard, Comment, CheckList)
+                     ParticipantInBoard, Card, FileInCard, Comment, CheckList,
+                     Tag)
 
 from users.models import CustomUser
 
 
-# class TagSerializer(serializers.ModelSerializer):
-#
-#     class Meta:
-#         model = Tag
-#         fields = ('id', 'name', 'color')
+class TagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = ('id', 'name', 'color')
+        read_only_fields = ('color', )
+
 
 class CheckListSerializer(serializers.ModelSerializer):
 
@@ -44,6 +47,7 @@ class FileInCardSerializer(serializers.ModelSerializer):
 
 
 class CardSerializer(serializers.ModelSerializer):
+    # tags = TagSerializer(many=True)
     files = FileInCardSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
     participants = CustomUserSerializer(many=True, read_only=True)
@@ -52,7 +56,7 @@ class CardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Card
-        fields = ('id', 'name', 'description', 'list', 'position',
+        fields = ('id', 'name', 'description', 'list', 'position', 'tags',
                   'is_participant', 'participants', 'files', 'comments',
                   'check_lists')
         read_only_fields = ('list', 'position')
@@ -68,12 +72,14 @@ class CardSerializer(serializers.ModelSerializer):
 
 
 class CardListOrCreateSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
     is_participant = serializers.SerializerMethodField()
 
     class Meta:
         model = Card
         fields = ('id', 'name', 'is_participant', 'position', 'list',
-                  'participants', 'files', 'comments', 'check_lists')
+                  'participants', 'tags', 'files', 'comments', 'check_lists')
+        read_only_fields = ('position', 'files', 'comments', 'check_lists')
 
     def get_is_participant(self, card):
         request = self.context.get('request')
@@ -128,13 +134,6 @@ class ParticipantRequestSerializer(serializers.ModelSerializer):
         fields = ('id', 'board', 'participant')
 
 
-# class TagInBoardSerializer(serializers.ModelSerializer):
-#
-#     class Meta:
-#         model = TagInBoard
-#         fields = ('id', 'tag', 'board', 'content')
-
-
 class BoardSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(max_length=None,
                                     allow_empty_file=True,
@@ -142,12 +141,13 @@ class BoardSerializer(serializers.ModelSerializer):
                                     required=False)
     author = serializers.SerializerMethodField(read_only=True)
     lists = ListSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
     is_favored = serializers.SerializerMethodField()
 
     class Meta:
         model = Board
         fields = ('id', 'name', 'description', 'avatar', 'author',
-                  'is_favored', 'participants', 'lists')
+                  'is_favored', 'participants', 'lists', 'tags')
         read_only_fields = ('participants', )
 
     def get_author(self, board):

@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 from .models import (Board, Favorite, List, ParticipantRequest,
-                     ParticipantInBoard, Card, FileInCard, Comment, CheckList)
+                     ParticipantInBoard, Card, FileInCard, Comment, CheckList,
+                     Tag)
 
 
 class BoardAdmin(admin.ModelAdmin):
@@ -14,11 +15,6 @@ class ListAdmin(admin.ModelAdmin):
 
 class ParticipantInBoardAdmin(admin.ModelAdmin):
     list_filter = ('board', )
-
-
-# class TagAdmin(admin.ModelAdmin):
-#     fields = ('name', 'color', 'hex')
-#     readonly_fields = ['hex']
 
 
 class CommentAdmin(admin.ModelAdmin):
@@ -34,7 +30,7 @@ admin.site.register(Favorite)
 admin.site.register(List, ListAdmin)
 admin.site.register(ParticipantRequest)
 admin.site.register(ParticipantInBoard, ParticipantInBoardAdmin)
-# admin.site.register(Tag, TagAdmin)
+admin.site.register(Tag)
 admin.site.register(Card)
 admin.site.register(FileInCard)
 admin.site.register(Comment, CommentAdmin)

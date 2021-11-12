@@ -9,7 +9,8 @@ from rest_framework.response import Response
 
 from .filters import BoardFilter, CardFilter, ParticipantsFilter
 from .models import (Board, Favorite, List, ParticipantRequest,
-                     ParticipantInBoard, Card, FileInCard, Comment, CheckList)
+                     ParticipantInBoard, Card, FileInCard, Comment, CheckList,
+                     Tag)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsRecipient,
                           IsModerator,
                           IsAuthorOrParticipantOrAdminForCreateList,
@@ -28,13 +29,14 @@ from .serializers import (BoardListOrCreateSerializer, BoardSerializer,
                           SendRequestSerializer, ChangeListOfCardSerializer,
                           SwitchModeratorSerializer, SwapCardsSerializer,
                           DeleteParticipantSerializer,
-                          SearchBoardSerializer, SearchCardSerializer)
+                          SearchBoardSerializer, SearchCardSerializer,
+                          TagSerializer)
 from users.models import CustomUser
 
 
-# class TagViewSet(viewsets.ReadOnlyModelViewSet):
-#     queryset = Tag.objects.all()
-#     serializer_class = TagSerializer
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
 
 
 class BoardViewSet(viewsets.ModelViewSet):
@@ -69,7 +71,7 @@ class BoardViewSet(viewsets.ModelViewSet):
                            'switch_moderator'):
             return [(IsAuthor | IsStaff)()]
 
-        if self.action in ('send_request', 'delete_participant'):
+        if self.action in ('send_request', 'delete_participant', 'edit_tag'):
             return [(IsAuthor | IsModerator | IsStaff)()]
 
     @action(detail=True, methods=['post', 'delete'])
@@ -237,21 +239,27 @@ class BoardViewSet(viewsets.ModelViewSet):
         board.participants.remove(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # @action(detail=True, methods=['put', 'patch'])
-    # def edit_tag(self, request, **kwargs):
-    #     tag_id = request.data['id']
-    #     tag = get_object_or_404(Tag, id=tag_id)
-    #     board = get_object_or_404(Board, id=kwargs.get('pk'))
-    #     self.check_object_permissions(self.request, board)
-    #     tag_in_board = get_object_or_404(TagInBoard,
-    #                                      board=board,
-    #                                      tag=tag)
-    #     content = request.data['content']
-    #
-    #     tag_in_board.content = content
-    #     tag_in_board.save()
-    #
-    #     return Response(status=status.HTTP_200_OK)
+    @action(detail=True, methods=['post'])
+    def edit_tag(self, request, **kwargs):
+        serializer = TagSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        board = get_object_or_404(Board, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, board)
+        tag_id = request.data['id']
+
+        if tag_id not in range(1, Tag.objects.count() + 1):
+            return Response({
+                'status': 'error',
+                'message': 'Такого тега не существует!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        tag = board.tags.get(id=tag_id)
+        name = request.data['name']
+        tag.name = name
+        tag.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, filter_class=ParticipantsFilter)
     def participants(self, request, **kwargs):

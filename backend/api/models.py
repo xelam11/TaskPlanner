@@ -4,25 +4,43 @@ from django.db import models
 from users.models import CustomUser
 
 
-# class Tag(models.Model):
-#     name = models.CharField(max_length=20,
-#                             verbose_name='Название цвета',
-#                             help_text='Напишите название цвета',
-#                             unique=True
-#                             )
-#     color = models.CharField(max_length=7,
-#                              verbose_name='Код цвета (HEX)',
-#                              help_text='Напишите код цвета (HEX)',
-#                              unique=True,
-#                              )
-#
-#     class Meta:
-#         verbose_name = 'Тег'
-#         verbose_name_plural = 'Теги'
-#
-#     def __str__(self):
-#         return self.name
-#
+class Tag(models.Model):
+
+    class Color(models.IntegerChoices):
+        RED = 1
+        ORANGE = 2
+        YELLOW = 3
+        GREEN = 4
+        BLUE = 5
+        PURPLE = 6
+
+    color_to_hex = {
+        Color.RED: '#red',
+        Color.ORANGE: '#orange',
+        Color.YELLOW: '#yellow',
+        Color.GREEN: '#green',
+        Color.BLUE: '#blue',
+        Color.PURPLE: '#purple'
+    }
+
+    name = models.CharField(max_length=20,
+                            verbose_name='Название тега',
+                            help_text='Напишите название тега',
+                            blank=True,
+                            default=''
+                            )
+    color = models.PositiveSmallIntegerField(choices=Color.choices)
+
+    @property
+    def hex(self):
+        return Tag.color_to_hex[self.color]
+
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+
+    def __str__(self):
+        return f"Color: '{self.color}', name: '{self.name}'"
 
 
 class BoardManager(models.Manager):
@@ -39,8 +57,8 @@ class BoardManager(models.Manager):
         participant_in_board.is_moderator = True
         participant_in_board.save()
 
-        # for tag in Tag.objects.all():
-        #     TagInBoard.objects.create(board=board, tag=tag)
+        for tag in Tag.objects.all():
+            board.tags.add(tag)
 
         return board
 
@@ -70,11 +88,11 @@ class Board(models.Model):
                                           blank=True,
                                           verbose_name='Участники',
                                           )
-    # tags = models.ManyToManyField(Tag,
-    #                               related_name='boards',
-    #                               blank=True,
-    #                               verbose_name='Тег',
-    #                               )
+    tags = models.ManyToManyField(Tag,
+                                  related_name='boards',
+                                  blank=True,
+                                  verbose_name='Тег',
+                                  )
 
     objects = BoardManager()
 
@@ -156,29 +174,6 @@ class ParticipantRequest(models.Model):
                 f'запрашиваемый пользователь: {self.participant}')
 
 
-# class TagInBoard(models.Model):
-#     tag = models.ForeignKey(Tag,
-#                             on_delete=models.CASCADE,
-#                             verbose_name='Тег',
-#                             )
-#     board = models.ForeignKey(Board,
-#                               on_delete=models.CASCADE,
-#                               verbose_name='Доска'
-#                               )
-#     content = models.CharField(max_length=20,
-#                                blank=True,
-#                                default='',
-#                                verbose_name='Содержание',
-#                                help_text='Напишите содержание')
-#
-#     class Meta:
-#         verbose_name = 'Тег в доске'
-#         verbose_name_plural = 'Теги в досках'
-#
-#     def __str__(self):
-#         return f'Тег: {self.tag} (содержание: {self.content}) => {self.board}'
-#
-#
 class List(models.Model):
     name = models.CharField(max_length=50,
                             verbose_name='Название',
@@ -223,11 +218,11 @@ class Card(models.Model):
                                           blank=True,
                                           verbose_name='Участники',
                                           )
-    # tags = models.ManyToManyField(Tag,
-    #                               related_name='cards',
-    #                               blank=True,
-    #                               verbose_name='Тег',
-    #                               )
+    tags = models.ManyToManyField(Tag,
+                                  related_name='cards',
+                                  blank=True,
+                                  verbose_name='Тег',
+                                  )
     position = models.PositiveSmallIntegerField(
         verbose_name='Номер позиции на листе',
         blank=True,
@@ -305,27 +300,3 @@ class CheckList(models.Model):
 
     def __str__(self):
         return self.text
-
-
-# def handle_user_post_save(instance, created, **kwargs):
-#     if not created:
-#         # update
-#         if instance.avatar == "" and check if user has file stored on disk:
-#             delete the file from disk
-#
-# dct = {
-#     'User': {
-#         'signals': [handle_user_post_save, ]
-#     }
-# }
-#
-# def connect(fn, model):
-#     sct[model]['signals'].append(fn)
-#
-# save()
-# delete()
-#
-# def save():
-#     if model has signals:
-#         for each signal:
-#             run signal

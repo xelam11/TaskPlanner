@@ -24,7 +24,10 @@ INSTALLED_APPS = [
     'django_cleanup.apps.CleanupConfig',
     'djoser',
     'users',
-    'api',
+    'boards',
+    'requests',
+    'lists',
+    'cards',
 ]
 
 MIDDLEWARE = [
@@ -100,6 +103,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.LimitOffsetPagination'
 }
 
 DJOSER = {

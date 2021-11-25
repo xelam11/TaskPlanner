@@ -1,6 +1,8 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from .models import Card, FileInCard, Comment, CheckList
+from boards.models import Tag
 from boards.tag_serializer import TagSerializer
 from users.serializers import CustomUserSerializer
 
@@ -76,6 +78,35 @@ class CardListOrCreateSerializer(serializers.ModelSerializer):
             return False
 
         return card.participants.filter(id=user.id).exists()
+
+
+class AddOrRemoveTagInCardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def create(self, validated_data):
+        card = get_object_or_404(Card, id=self.context.get('card_id'))
+        tag_id = validated_data['id']
+        card.tags.add(tag_id)
+
+        return card
+
+    def validate_id(self, id_):
+        card = get_object_or_404(Card, id=self.context.get('card_id'))
+        board = card.list.board
+
+        if not board.tags.filter(id=id_).exists():
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Такого тега нет в данной доске!'
+            })
+
+        if card.tags.filter(id=id_).exists():
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Такой тег уже применен в данной карточке!'
+            })
+
+        return id_
 
 
 class IdSerializer(serializers.Serializer):

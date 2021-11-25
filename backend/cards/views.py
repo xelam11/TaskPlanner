@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,11 +9,12 @@ from .filters import CardFilter
 from .models import Card, FileInCard, Comment, CheckList
 from .permissions import (IsAuthor, IsParticipant, IsStaff,
                           IsAuthorOrParticipantOrAdminForCreateCard,
-                          IsAuthorOrParticipantOrAdminForCommentAndCheckList,
+                          IsAuthorOrParticipantOrAdminOfBoardForActionWithCard,
                           IsAuthorOfComment)
 from .serializers import (CardSerializer, CardListOrCreateSerializer,
+                          AddOrRemoveTagInCardSerializer,
                           FileInCardSerializer, CommentSerializer,
-                          IdSerializer, CheckListSerializer,
+                          CheckListSerializer,
                           ChangeListOfCardSerializer, SwapCardsSerializer)
 from boards.models import Tag
 from boards.tag_serializer import TagSerializer
@@ -145,32 +146,6 @@ class CardViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
-    def tag(self, request, **kwargs):
-        serializer = IdSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        card = get_object_or_404(Card, id=kwargs.get('pk'))
-        board = card.list.board
-        tag = get_object_or_404(Tag, id=request.data['id'])
-        self.check_object_permissions(self.request, card)
-
-        if not board.tags.filter(id=request.data['id']).exists():
-            return Response({
-                'status': 'error',
-                'message': 'Такого тега нет в данной доске!'},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        if request.method == 'POST':
-            card.tags.add(tag)
-            serializer = TagSerializer(card.tags.all(), many=True)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        if request.method == 'DELETE':
-            card.tags.remove(tag)
-            serializer = TagSerializer(card.tags.all(), many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['post', 'delete'])
     def file(self, request, **kwargs):
         card = get_object_or_404(Card, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, card)
@@ -232,6 +207,46 @@ class CardViewSet(viewsets.ModelViewSet):
             card.participants.remove(participant)
 
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TagInCardViewSet(viewsets.GenericViewSet,
+                       mixins.ListModelMixin,
+                       mixins.RetrieveModelMixin,
+                       mixins.CreateModelMixin,
+                       mixins.DestroyModelMixin):
+
+    def get_queryset(self):
+        card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
+
+        return card.tags.all()
+
+    def get_serializer_class(self):
+
+        if self.action in ('list', 'retrieve'):
+            return TagSerializer
+
+        if self.action in ('create', 'destroy'):
+            return AddOrRemoveTagInCardSerializer
+
+    def get_serializer_context(self):
+        return {
+            'card_id': self.kwargs.get('card_id')
+        }
+
+    def get_permissions(self):
+
+        if self.action in ('list', 'create'):
+            return [IsAuthorOrParticipantOrAdminOfBoardForActionWithCard()]
+
+        if self.action in ('retrieve', 'destroy'):
+            return [(IsAuthor | IsParticipant | IsStaff)()]
+
+    def destroy(self, request, *args, **kwargs):
+        card = get_object_or_404(Card, id=kwargs.get('card_id'))
+        tag_id = kwargs.get('pk')
+        card.tags.remove(tag_id)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

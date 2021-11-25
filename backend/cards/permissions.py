@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 
 from .models import Card, Comment, CheckList
+from boards.models import Tag
 from lists.models import List
 
 
@@ -11,6 +12,9 @@ class IsAuthor(permissions.BasePermission):
 
         if type(obj) is Card:
             return obj.list.board.author == request.user
+
+        if type(obj) is Tag:
+            return obj.board.author == request.user
 
         elif type(obj) is Comment:
             return obj.card.list.board.author == request.user
@@ -25,6 +29,10 @@ class IsParticipant(permissions.BasePermission):
 
         if type(obj) is Card:
             return obj.list.board.participants.filter(
+                id=request.user.id).exists()
+
+        if type(obj) is Tag:
+            return obj.board.participants.filter(
                 id=request.user.id).exists()
 
         elif type(obj) is Comment:
@@ -54,8 +62,10 @@ class IsAuthorOrParticipantOrAdminForCreateCard(permissions.BasePermission):
                     request.user.is_staff)
 
 
-class IsAuthorOrParticipantOrAdminForCommentAndCheckList(permissions.
-                                                         BasePermission):
+class IsAuthorOrParticipantOrAdminOfBoardForActionWithCard(permissions.
+                                                           BasePermission):
+    """Данное разрешение распространяется на создание/просмотр всех: тегов
+    в карточке, комментариев и чек-листов"""
 
     def has_permission(self, request, view):
         card = get_object_or_404(Card, id=view.kwargs.get('card_id'))

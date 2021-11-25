@@ -4,7 +4,8 @@ from rest_framework.routers import DefaultRouter
 
 from boards.views import BoardViewSet
 from cards.views import (CardViewSet, ParticipantInCardViewSet,
-                         TagInCardViewSet, CommentViewSet, CheckListViewSet)
+                         FileInCardViewSet, TagInCardViewSet, CommentViewSet,
+                         CheckListViewSet)
 from requests.views import BoardRequestViewSet, UserRequestViewSet
 from lists.views import ListViewSet
 
@@ -18,6 +19,9 @@ router.register(r'boards/(?P<board_id>\d+)/requests',
 router.register('my_requests', UserRequestViewSet, basename='my_requests')
 router.register('lists', ListViewSet, basename='lists')
 router.register('cards', CardViewSet, basename='cards')
+router.register(r'cards/(?P<card_id>\d+)/files',
+                FileInCardViewSet,
+                basename='files')
 router.register(r'cards/(?P<card_id>\d+)/participants',
                 ParticipantInCardViewSet,
                 basename='participants')

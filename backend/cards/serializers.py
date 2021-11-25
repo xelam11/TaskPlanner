@@ -34,6 +34,13 @@ class FileInCardSerializer(serializers.ModelSerializer):
         fields = ('id', 'card', 'file')
         read_only_fields = ('card', )
 
+    def create(self, validated_data):
+        card = get_object_or_404(Card, id=self.context.get('card_id'))
+        file = validated_data.get('file')
+        file_in_card = FileInCard.objects.create(card=card, file=file)
+
+        return file_in_card
+
 
 class CardSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)

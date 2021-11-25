@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 
-from .models import Card, Comment, CheckList
+from .models import Card, FileInCard, Comment, CheckList
 from boards.models import Tag
 from lists.models import List
 from users.models import CustomUser
@@ -17,7 +17,7 @@ class IsAuthor(permissions.BasePermission):
         if type(obj) is Tag:
             return obj.board.author == request.user
 
-        if type(obj) is CustomUser:
+        if type(obj) is CustomUser or type(obj) is FileInCard:
             card = get_object_or_404(Card, id=view.kwargs.get('card_id'))
             board = card.list.board
             return board.author == request.user
@@ -41,7 +41,7 @@ class IsParticipant(permissions.BasePermission):
             return obj.board.participants.filter(
                 id=request.user.id).exists()
 
-        if type(obj) is CustomUser:
+        if type(obj) is CustomUser or type(obj) is FileInCard:
             card = get_object_or_404(Card, id=view.kwargs.get('card_id'))
             board = card.list.board
             return board.participants.filter(id=request.user.id).exists()
@@ -75,8 +75,9 @@ class IsAuthorOrParticipantOrAdminForCreateCard(permissions.BasePermission):
 
 class IsAuthorOrParticipantOrAdminOfBoardForActionWithCard(permissions.
                                                            BasePermission):
-    """Данное разрешение распространяется на создание, просмотр
-    и удаление:
+    """Данное разрешение распространяется на создание, удаление
+    и просмотр всех:
+    - файлов в карточке;
     - участников в карточке;
     - тегов в карточке;
     - комментариев;

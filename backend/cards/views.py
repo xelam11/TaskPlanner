@@ -69,8 +69,7 @@ class CardViewSet(viewsets.ModelViewSet):
             return [IsAuthorOrParticipantOrAdminForCreateCard()]
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
-                           'change_list', 'swap', 'tag', 'file',
-                           'participant'):
+                           'change_list', 'swap'):
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
     @action(detail=True, methods=['post'])
@@ -147,27 +146,31 @@ class CardViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post', 'delete'])
-    def file(self, request, **kwargs):
-        card = get_object_or_404(Card, id=kwargs.get('pk'))
-        self.check_object_permissions(self.request, card)
 
-        if request.method == 'POST':
-            serializer = FileInCardSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+class FileInCardViewSet(viewsets.GenericViewSet,
+                        mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.CreateModelMixin,
+                        mixins.DestroyModelMixin):
+    serializer_class = FileInCardSerializer
 
-            file = self.request.data['file']
-            FileInCard.objects.create(card=card, file=file)
+    def get_queryset(self):
+        card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
 
-            return Response(status=status.HTTP_201_CREATED)
+        return FileInCard.objects.filter(card=card)
 
-        if request.method == 'DELETE':
-            file_in_card = get_object_or_404(FileInCard,
-                                             id=self.request.data['id']
-                                             )
-            file_in_card.delete()
+    def get_serializer_context(self):
+        return {
+            'card_id': self.kwargs.get('card_id')
+        }
 
-            return Response(status=status.HTTP_204_NO_CONTENT)
+    def get_permissions(self):
+
+        if self.action in ('list', 'create', 'destroy'):
+            return [IsAuthorOrParticipantOrAdminOfBoardForActionWithCard()]
+
+        if self.action == 'retrieve':
+            return [(IsAuthor | IsParticipant | IsStaff)()]
 
 
 class ParticipantInCardViewSet(viewsets.GenericViewSet,

@@ -80,6 +80,36 @@ class CardListOrCreateSerializer(serializers.ModelSerializer):
         return card.participants.filter(id=user.id).exists()
 
 
+class AddOrRemoveParticipantInCardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def create(self, validated_data):
+        card = get_object_or_404(Card, id=self.context.get('card_id'))
+        user_id = validated_data['id']
+        card.participants.add(user_id)
+
+        return card
+
+    def validate_id(self, id_):
+        card = get_object_or_404(Card, id=self.context.get('card_id'))
+        board = card.list.board
+
+        if card.participants.filter(id=id_).exists():
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message':
+                    'Данный пользователь уже является участником карточки!'
+            })
+
+        if not board.participants.filter(id=id_).exists():
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Данный пользователь не является участникм доски!'
+            })
+
+        return id_
+
+
 class AddOrRemoveTagInCardSerializer(serializers.Serializer):
     id = serializers.IntegerField()
 

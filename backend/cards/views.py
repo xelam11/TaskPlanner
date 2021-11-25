@@ -12,6 +12,7 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff,
                           IsAuthorOrParticipantOrAdminOfBoardForActionWithCard,
                           IsAuthorOfComment)
 from .serializers import (CardSerializer, CardListOrCreateSerializer,
+                          AddOrRemoveParticipantInCardSerializer,
                           AddOrRemoveTagInCardSerializer,
                           FileInCardSerializer, CommentSerializer,
                           CheckListSerializer,
@@ -19,6 +20,7 @@ from .serializers import (CardSerializer, CardListOrCreateSerializer,
 from boards.models import Tag
 from boards.tag_serializer import TagSerializer
 from users.models import CustomUser
+from users.serializers import CustomUserSerializer
 from lists.models import List
 
 
@@ -167,46 +169,45 @@ class CardViewSet(viewsets.ModelViewSet):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post', 'delete'])
-    def participant(self, request, **kwargs):
-        # serializer = ParticipantInCardSerializer(data=request.data)
-        # serializer.is_valid(raise_exception=True)
 
-        card = get_object_or_404(Card, id=kwargs.get('pk'))
-        board = card.list.board
-        self.check_object_permissions(self.request, card)
-        participant = get_object_or_404(CustomUser, id=request.data['id'])
+class ParticipantInCardViewSet(viewsets.GenericViewSet,
+                               mixins.ListModelMixin,
+                               mixins.RetrieveModelMixin,
+                               mixins.CreateModelMixin,
+                               mixins.DestroyModelMixin):
 
-        if request.method == 'POST':
+    def get_queryset(self):
+        card = get_object_or_404(Card, id=self.kwargs.get('card_id'))
 
-            if card.participants.filter(id=participant.id).exists():
-                return Response({
-                    'status': 'error',
-                    'message':
-                        'Данный пользователь уже является участником карточки!'
-                }, status=status.HTTP_400_BAD_REQUEST)
+        return card.participants.all()
 
-            if not board.participants.filter(id=participant.id).exists():
-                return Response({
-                    'status': 'error',
-                    'message':
-                        'Данный пользователь не является участникм доски!'},
-                    status=status.HTTP_400_BAD_REQUEST)
+    def get_serializer_class(self):
 
-            card.participants.add(participant)
-            return Response(status=status.HTTP_200_OK)
+        if self.action in ('list', 'retrieve'):
+            return CustomUserSerializer
 
-        if request.method == 'DELETE':
-            if not card.participants.filter(id=participant.id).exists():
-                return Response({
-                    'status': 'error',
-                    'message':
-                        'Данный пользователь не является участникм карточки!'},
-                    status=status.HTTP_400_BAD_REQUEST)
+        if self.action in ('create', 'destroy'):
+            return AddOrRemoveParticipantInCardSerializer
 
-            card.participants.remove(participant)
+    def get_serializer_context(self):
+        return {
+            'card_id': self.kwargs.get('card_id')
+        }
 
-            return Response(status=status.HTTP_204_NO_CONTENT)
+    def get_permissions(self):
+
+        if self.action in ('list', 'create', 'destroy'):
+            return [IsAuthorOrParticipantOrAdminOfBoardForActionWithCard()]
+
+        if self.action == 'retrieve':
+            return [(IsAuthor | IsParticipant | IsStaff)()]
+
+    def destroy(self, request, *args, **kwargs):
+        card = get_object_or_404(Card, id=kwargs.get('card_id'))
+        user_id = kwargs.get('pk')
+        card.participants.remove(user_id)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagInCardViewSet(viewsets.GenericViewSet,
@@ -235,10 +236,10 @@ class TagInCardViewSet(viewsets.GenericViewSet,
 
     def get_permissions(self):
 
-        if self.action in ('list', 'create'):
+        if self.action in ('list', 'create', 'destroy'):
             return [IsAuthorOrParticipantOrAdminOfBoardForActionWithCard()]
 
-        if self.action in ('retrieve', 'destroy'):
+        if self.action == 'retrieve':
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
     def destroy(self, request, *args, **kwargs):

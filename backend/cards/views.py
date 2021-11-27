@@ -101,25 +101,12 @@ class CardViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def swap(self, request, **kwargs):
-        serializer = SwapCardsSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
         card_1 = get_object_or_404(Card, id=request.data['card_1'])
         card_2 = get_object_or_404(Card, id=request.data['card_2'])
         self.check_object_permissions(self.request, card_1)
 
-        if card_1 == card_2:
-            return Response({
-                'status': 'error',
-                'message': 'Нельзя менять местами карточку с самой собой!'},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        if card_1.list != card_2.list:
-            return Response({
-                'status': 'error',
-                'message':
-                    'Нельзя менять местами карточки из разных листов!'},
-                status=status.HTTP_400_BAD_REQUEST)
+        serializer = SwapCardsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         card_1.position, card_2.position = card_2.position, card_1.position
         card_1.save()

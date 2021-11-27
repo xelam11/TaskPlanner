@@ -185,3 +185,23 @@ class ChangeListOfCardSerializer(serializers.Serializer):
 class SwapCardsSerializer(serializers.Serializer):
     card_1 = serializers.IntegerField()
     card_2 = serializers.IntegerField()
+
+    def validate(self, data):
+        card_id_1 = data.get('card_1')
+        card_id_2 = data.get('card_2')
+        card_1 = get_object_or_404(Card, id=card_id_1)
+        card_2 = get_object_or_404(Card, id=card_id_2)
+
+        if card_id_1 == card_id_2:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Нельзя менять местами карточку с самой собой!'
+            })
+
+        if card_1.list != card_2.list:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Нельзя менять местами карточки из разных листов!'
+            })
+
+        return data

@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import Card, FileInCard, Comment, CheckList
 from boards.models import Tag
 from boards.tag_serializer import TagSerializer
+from lists.models import List
 from users.serializers import CustomUserSerializer
 
 
@@ -146,19 +147,41 @@ class AddOrRemoveTagInCardSerializer(serializers.Serializer):
         return id_
 
 
-class IdSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-
-
 class ChangeListOfCardSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     position = serializers.IntegerField()
+
+    def validate_id(self, id_):
+        card = get_object_or_404(Card, id=self.initial_data.get('card_id'))
+        new_list = get_object_or_404(List, id=id_)
+
+        if card.list.board != new_list.board:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message':
+                    'Нельзя переместить карточку в лист из другой доски!'
+            })
+        return id_
+
+    def validate_position(self, position):
+        new_list = get_object_or_404(List, id=self.initial_data.get('id'))
+
+        if position < 1:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': "Значение поля 'position' не может быть меньше 1!"
+            })
+
+        if position > new_list.cards.count() + 1:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': "Значение поля 'position' не может превышать "
+                           "количество карточек в новом списке!"
+            })
+
+        return position
 
 
 class SwapCardsSerializer(serializers.Serializer):
     card_1 = serializers.IntegerField()
     card_2 = serializers.IntegerField()
-
-
-# class ParticipantInCardSerializer(serializers.Serializer):
-#     id = serializers.IntegerField()

@@ -74,36 +74,17 @@ class CardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def change_list(self, request, **kwargs):
-        serializer = ChangeListOfCardSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
         card = get_object_or_404(Card, id=kwargs.get('pk'))
         self.check_object_permissions(self.request, card)
+
+        data = request.data
+        data['card_id'] = kwargs.get('pk')
+        serializer = ChangeListOfCardSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
 
         new_list_id = request.data['id']
         new_list = get_object_or_404(List, id=new_list_id)
         new_position = request.data['position']
-
-        if card.list.board != new_list.board:
-            return Response({
-                'status': 'error',
-                'message':
-                    'Нельзя переместить карточку в лист из другой доски!'},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        if new_position < 1:
-            return Response({
-                'status': 'error',
-                'message':
-                    "Значение поля 'position' не может быть меньше 1!"},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        if new_position > new_list.cards.count() + 1:
-            return Response({
-                'status': 'error',
-                'message': "Значение поля 'position' не может "
-                           "превышать количество карточек в новом списке!"},
-                status=status.HTTP_400_BAD_REQUEST)
 
         for card_ in new_list.cards.all()[new_position - 1:]:
             card_.position += 1

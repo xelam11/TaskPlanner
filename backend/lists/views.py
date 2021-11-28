@@ -57,24 +57,12 @@ class ListViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def swap(self, request, **kwargs):
-        serializer = SwapListsSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
         list_1 = get_object_or_404(List, id=request.data['list_1'])
         list_2 = get_object_or_404(List, id=request.data['list_2'])
         self.check_object_permissions(request, list_1)
 
-        if list_1 == list_2:
-            return Response({
-                'status': 'error',
-                'message': 'Нельзя менять местами лист с самим собой!'},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        if list_1.board != list_2.board:
-            return Response({
-                'status': 'error',
-                'message': 'Нельзя менять местами листы из разных досок!'},
-                status=status.HTTP_400_BAD_REQUEST)
+        serializer = SwapListsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         list_1.position, list_2.position = list_2.position, list_1.position
         list_1.save()

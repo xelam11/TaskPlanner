@@ -7,25 +7,9 @@ from boards.models import Tag
 
 class CardFilter(filters.FilterSet):
     board = filters.CharFilter(field_name='list__board')
-    name = filters.CharFilter(field_name='name', lookup_expr='contains')
-    tag_name = filters.CharFilter(field_name='tags__name',
-                                  lookup_expr='contains')
-    tag_color = filters.CharFilter(method='get_tag_color',
-                                   lookup_expr='contains')
-    first_name = filters.CharFilter(field_name='participants__first_name',
-                                    lookup_expr='contains')
-    last_name = filters.CharFilter(field_name='participants__last_name',
-                                   lookup_expr='contains')
-    username = filters.CharFilter(field_name='participants__username',
-                                  lookup_expr='contains')
+    tag = filters.CharFilter(field_name='tags')
     is_participant = filters.BooleanFilter(method='get_is_participant')
-    search = filters.CharFilter(field_name='get_search')
-    # tag__in = NumberInFilter(field_name='tags', lookup_expr='in')
-
-    # tags__in=[1,2,4,5]
-    # filters.InFilter
-    # filters
-    # SELECT * WHERE name IN (1, 2, 3, 4, 5)
+    search = filters.CharFilter(method='get_search')
 
     class Meta:
         model = Card
@@ -40,13 +24,12 @@ class CardFilter(filters.FilterSet):
         'фиолетовый': Tag.Color.PURPLE
     }
 
-    def get_search(self, queryset, name, value: str):
+    def get_search(self, queryset, name, value):
         query = Q()
 
         for field in [
             'name',
             'tags__name',
-            'tags__color',
             'participants__first_name',
             'participants__last_name',
             'participants__username'
@@ -54,13 +37,12 @@ class CardFilter(filters.FilterSet):
             lookup = {field + '__icontains': value}
             query |= Q(**lookup)
 
-        return queryset.filter(query)
+        if value in CardFilter.dict_of_colors:
+            tag_id = CardFilter.dict_of_colors[value]
 
-    def get_tag_color(self, queryset, name, value):
-        for color in CardFilter.dict_of_colors:
-            if value in color:
-                return queryset.filter(tags__id=CardFilter.dict_of_colors[color])
-        return queryset.none()
+            return queryset.filter(Q(tags__id=tag_id) | Q(query)).distinct()
+
+        return queryset.filter(query).distinct()
 
     def get_is_participant(self, queryset, name, value):
         user = self.request.user

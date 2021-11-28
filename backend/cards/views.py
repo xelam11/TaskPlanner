@@ -17,9 +17,7 @@ from .serializers import (CardSerializer, CardListOrCreateSerializer,
                           FileInCardSerializer, CommentSerializer,
                           CheckListSerializer,
                           ChangeListOfCardSerializer, SwapCardsSerializer)
-from boards.models import Tag
 from boards.tag_serializer import TagSerializer
-from users.models import CustomUser
 from users.serializers import CustomUserSerializer
 from lists.models import List
 
@@ -240,7 +238,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
-            return [IsAuthorOrParticipantOrAdminForCommentAndCheckList()]
+            return [IsAuthorOrParticipantOrAdminOfBoardForActionWithCard()]
 
         if self.action == 'retrieve':
             return [(IsAuthor | IsParticipant | IsStaff)()]
@@ -268,7 +266,7 @@ class CheckListViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
 
         if self.action in ('list', 'create'):
-            return [IsAuthorOrParticipantOrAdminForCommentAndCheckList()]
+            return [IsAuthorOrParticipantOrAdminOfBoardForActionWithCard()]
 
         if self.action in ('retrieve', 'update', 'partial_update', 'destroy',
                            'switch_is_active'):

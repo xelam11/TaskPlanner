@@ -2,7 +2,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from .models import Card, FileInCard, Comment, CheckList
-from boards.models import Tag
 from boards.tag_serializer import TagSerializer
 from lists.models import List
 from users.serializers import CustomUserSerializer
@@ -21,11 +20,17 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('id', 'text', 'author', 'card', 'pub_date')
+        fields = ('id', 'text', 'author', 'card', 'is_updated',  'pub_date')
         read_only_fields = ('card', 'pub_date')
 
     def get_author(self, comment):
         return CustomUserSerializer(comment.author).data
+
+    def update(self, instance, validated_data):
+        instance.is_updated = True
+        instance.save()
+
+        return instance
 
 
 class FileInCardSerializer(serializers.ModelSerializer):

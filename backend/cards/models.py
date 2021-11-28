@@ -78,6 +78,8 @@ class Comment(models.Model):
                              related_name='comments',
                              verbose_name='Карточка',
                              )
+    is_updated = models.BooleanField(default=False
+                                     )
     pub_date = models.DateTimeField(auto_now_add=True,
                                     verbose_name='Дата добавления')
 

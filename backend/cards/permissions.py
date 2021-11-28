@@ -81,7 +81,7 @@ class IsAuthorOrParticipantOrAdminOfBoardForActionWithCard(permissions.
     - участников в карточке;
     - тегов в карточке;
     - комментариев;
-    - чек-листовю"""
+    - чек-листов."""
 
     def has_permission(self, request, view):
         card = get_object_or_404(Card, id=view.kwargs.get('card_id'))

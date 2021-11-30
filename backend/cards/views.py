@@ -155,6 +155,7 @@ class ParticipantInCardViewSet(viewsets.GenericViewSet,
         if self.action in ('list', 'retrieve'):
             return CustomUserSerializer
 
+        # delete 'destroy'
         if self.action in ('create', 'destroy'):
             return AddOrRemoveParticipantInCardSerializer
 
@@ -174,6 +175,14 @@ class ParticipantInCardViewSet(viewsets.GenericViewSet,
     def destroy(self, request, *args, **kwargs):
         card = get_object_or_404(Card, id=kwargs.get('card_id'))
         user_id = kwargs.get('pk')
+
+        if not card.participants.filter(id=user_id).exists():
+            return Response({
+                'status': 'error',
+                'message':
+                    'Данный пользователь не является участником карточки!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
         card.participants.remove(user_id)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -214,6 +223,13 @@ class TagInCardViewSet(viewsets.GenericViewSet,
     def destroy(self, request, *args, **kwargs):
         card = get_object_or_404(Card, id=kwargs.get('card_id'))
         tag_id = kwargs.get('pk')
+
+        if not card.tags.filter(id=tag_id).exists():
+            return Response({
+                'status': 'error',
+                'message': 'Данный тег не применен в карточке!'},
+                status=status.HTTP_400_BAD_REQUEST)
+
         card.tags.remove(tag_id)
 
         return Response(status=status.HTTP_204_NO_CONTENT)

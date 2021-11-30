@@ -4,11 +4,10 @@ from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from users.models import CustomUser
 
 from .filters import BoardFilter
-from .models import (Board, Favorite, ParticipantInBoard, Tag)
-from .permissions import (IsAuthor, IsParticipant, IsStaff, IsModerator,
+from .models import (Board, Favorite, ParticipantInBoard)
+from .permissions import (IsAuthor, IsParticipant, IsStaff,
                           IsAuthorOrParticipantOrAdminListParticipantsAndTags,
                           IsAuthorOrModeratorOrAdminDelParticipantsPutTags)
 from .serializers import (BoardListOrCreateSerializer, BoardSerializer,
@@ -69,9 +68,7 @@ class BoardViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
-            count, _ = Favorite.objects.filter(
-                user=user,
-                board=board).delete()
+            count, _ = Favorite.objects.filter(user=user, board=board).delete()
 
             if count == 0:
                 return Response({
@@ -83,23 +80,19 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def switch_moderator(self, request, **kwargs):
-        serializer = SwitchModeratorSerializer(data=request.data)
+        board = get_object_or_404(Board, id=kwargs.get('pk'))
+        self.check_object_permissions(self.request, board)
+
+        data = request.data
+        data['board_id'] = kwargs.get('pk')
+        serializer = SwitchModeratorSerializer(data=data)
         serializer.is_valid(raise_exception=True)
 
         user_id = request.data['id']
-        participant = get_object_or_404(CustomUser, id=user_id)
-        board = get_object_or_404(Board, id=kwargs.get('pk'))
-        self.check_object_permissions(self.request, board)
         participant_in_board = get_object_or_404(ParticipantInBoard,
                                                  board=board,
-                                                 participant=participant,
+                                                 participant__=user_id,
                                                  )
-
-        if request.user == participant:
-            return Response({
-                'status': 'error',
-                'message': 'Автор доски всегда должен быть модератором!'},
-                status=status.HTTP_400_BAD_REQUEST)
 
         if participant_in_board.is_moderator:
             participant_in_board.is_moderator = False

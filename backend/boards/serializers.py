@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from .models import Board, Favorite, ParticipantInBoard
@@ -90,3 +91,18 @@ class ParticipantInBoardSerializer(serializers.ModelSerializer):
 
 class SwitchModeratorSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+
+    def validate_id(self, id_):
+        board = get_object_or_404(Board, id=self.initial_data.get('board_id'))
+        participant_in_board = get_object_or_404(ParticipantInBoard,
+                                                 board=board,
+                                                 participant__id=id_,
+                                                 )
+
+        if participant_in_board.participant == board.author:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': 'Автор доски всегда должен быть модератором!'
+            })
+
+        return id_

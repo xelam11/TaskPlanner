@@ -1,6 +1,6 @@
 import django_filters as filters
 
-from .models import Board, ParticipantInBoard
+from .models import Board
 
 
 class BoardFilter(filters.FilterSet):
@@ -35,9 +35,3 @@ class BoardFilter(filters.FilterSet):
             return queryset.filter(participants__id=user.id)
 
         return queryset.exclude(participants__id=user.id)
-
-
-class ParticipantsFilter(filters.FilterSet):
-    class Meta:
-        model = ParticipantInBoard
-        fields = ('is_moderator',)

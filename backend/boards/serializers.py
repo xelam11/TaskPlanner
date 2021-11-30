@@ -90,7 +90,3 @@ class ParticipantInBoardSerializer(serializers.ModelSerializer):
 
 class SwitchModeratorSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-
-
-class DeleteParticipantSerializer(serializers.Serializer):
-    id = serializers.IntegerField()

@@ -1,19 +1,29 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 
-from .models import ParticipantInBoard
+from .models import Board, ParticipantInBoard
 
 
 class IsAuthor(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        return obj.author == request.user
+
+        if type(obj) is Board:
+            return obj.author == request.user
+
+        if type(obj) is ParticipantInBoard:
+            return obj.board.author == request.user
 
 
 class IsParticipant(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        return obj.participants.filter(id=request.user.id).exists()
+
+        if type(obj) is Board:
+            return obj.participants.filter(id=request.user.id).exists()
+
+        if type(obj) is ParticipantInBoard:
+            return obj.board.participants.filter(id=request.user.id).exists()
 
 
 class IsStaff(permissions.BasePermission):
@@ -30,3 +40,31 @@ class IsModerator(permissions.BasePermission):
                                                  participant=request.user
                                                  )
         return participant_in_board.is_moderator
+
+
+class IsAuthorOrParticipantOrAdminForListParticipants(permissions.
+                                                      BasePermission):
+
+    def has_permission(self, request, view):
+        board = get_object_or_404(Board, id=view.kwargs.get('board_id'))
+
+        if request.user.is_authenticated:
+            return (request.user == board.author or
+                    board.participants.filter(id=request.user.id).exists() or
+                    request.user.is_staff)
+
+
+class IsAuthorOrModeratorOrAdminForRemoveParticipants(permissions.
+                                                      BasePermission):
+
+    def has_permission(self, request, view):
+        board = get_object_or_404(Board, id=view.kwargs.get('board_id'))
+        participant_in_board = get_object_or_404(ParticipantInBoard,
+                                                 board=board,
+                                                 participant=request.user
+                                                 )
+
+        if request.user.is_authenticated:
+            return (request.user == board.author or
+                    participant_in_board.is_moderator or
+                    request.user.is_staff)

@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 
-from .models import Board, ParticipantInBoard
+from .models import Board, ParticipantInBoard, Tag
 
 
 class IsAuthor(permissions.BasePermission):
@@ -14,6 +14,9 @@ class IsAuthor(permissions.BasePermission):
         if type(obj) is ParticipantInBoard:
             return obj.board.author == request.user
 
+        if type(obj) is Tag:
+            return obj.board.author == request.user
+
 
 class IsParticipant(permissions.BasePermission):
 
@@ -23,6 +26,9 @@ class IsParticipant(permissions.BasePermission):
             return obj.participants.filter(id=request.user.id).exists()
 
         if type(obj) is ParticipantInBoard:
+            return obj.board.participants.filter(id=request.user.id).exists()
+
+        if type(obj) is Tag:
             return obj.board.participants.filter(id=request.user.id).exists()
 
 
@@ -42,8 +48,8 @@ class IsModerator(permissions.BasePermission):
         return participant_in_board.is_moderator
 
 
-class IsAuthorOrParticipantOrAdminForListParticipants(permissions.
-                                                      BasePermission):
+class IsAuthorOrParticipantOrAdminListParticipantsAndTags(permissions.
+                                                          BasePermission):
 
     def has_permission(self, request, view):
         board = get_object_or_404(Board, id=view.kwargs.get('board_id'))
@@ -54,8 +60,8 @@ class IsAuthorOrParticipantOrAdminForListParticipants(permissions.
                     request.user.is_staff)
 
 
-class IsAuthorOrModeratorOrAdminForRemoveParticipants(permissions.
-                                                      BasePermission):
+class IsAuthorOrModeratorOrAdminDelParticipantsPutTags(permissions.
+                                                       BasePermission):
 
     def has_permission(self, request, view):
         board = get_object_or_404(Board, id=view.kwargs.get('board_id'))

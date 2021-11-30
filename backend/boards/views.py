@@ -9,8 +9,8 @@ from users.models import CustomUser
 from .filters import BoardFilter
 from .models import (Board, Favorite, ParticipantInBoard, Tag)
 from .permissions import (IsAuthor, IsParticipant, IsStaff, IsModerator,
-                          IsAuthorOrParticipantOrAdminForListParticipants,
-                          IsAuthorOrModeratorOrAdminForRemoveParticipants)
+                          IsAuthorOrParticipantOrAdminListParticipantsAndTags,
+                          IsAuthorOrModeratorOrAdminDelParticipantsPutTags)
 from .serializers import (BoardListOrCreateSerializer, BoardSerializer,
                           ParticipantInBoardSerializer,
                           SwitchModeratorSerializer)
@@ -50,9 +50,6 @@ class BoardViewSet(viewsets.ModelViewSet):
                            'switch_moderator'):
             return [(IsAuthor | IsStaff)()]
 
-        if self.action in ('delete_participant', 'edit_tag'):
-            return [(IsAuthor | IsModerator | IsStaff)()]
-
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, **kwargs):
         user = request.user
@@ -83,21 +80,6 @@ class BoardViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST)
 
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(detail=True, methods=['post'])
-    def edit_tag(self, request, **kwargs):
-        serializer = TagSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        board = get_object_or_404(Board, id=kwargs.get('pk'))
-        self.check_object_permissions(self.request, board)
-        tag = get_object_or_404(Tag, id=request.data['id'])
-        name = request.data['name']
-
-        tag.name = name
-        tag.save()
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def switch_moderator(self, request, **kwargs):
@@ -166,13 +148,13 @@ class ParticipantInBoardViewSet(viewsets.GenericViewSet,
     def get_permissions(self):
 
         if self.action == 'list':
-            return [IsAuthorOrParticipantOrAdminForListParticipants()]
+            return [IsAuthorOrParticipantOrAdminListParticipantsAndTags()]
 
         if self.action == 'retrieve':
             return [(IsAuthor | IsParticipant | IsStaff)()]
 
         if self.action == 'destroy':
-            return [IsAuthorOrModeratorOrAdminForRemoveParticipants()]
+            return [IsAuthorOrModeratorOrAdminDelParticipantsPutTags()]
 
     def destroy(self, request, *args, **kwargs):
         board = get_object_or_404(Board, id=kwargs.get('board_id'))
@@ -201,6 +183,30 @@ class ParticipantInBoardViewSet(viewsets.GenericViewSet,
                 card.participants.remove(user_id)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TagInBoardViewSet(viewsets.GenericViewSet,
+                        mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.UpdateModelMixin):
+    serializer_class = TagSerializer
+
+    def get_queryset(self):
+        board = get_object_or_404(Board, id=self.kwargs.get('board_id'))
+
+        return board.tags.all()
+
+    def get_permissions(self):
+
+        if self.action == 'list':
+            return [IsAuthorOrParticipantOrAdminListParticipantsAndTags()]
+
+        if self.action == 'retrieve':
+            return [(IsAuthor | IsParticipant | IsStaff)()]
+
+        if self.action in ('update', 'partial_update',):
+            return [IsAuthorOrModeratorOrAdminDelParticipantsPutTags()]
+
 
 # class SearchAPIView(APIView):
 #

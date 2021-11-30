@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from boards.views import BoardViewSet
+from boards.views import (BoardViewSet, ParticipantInBoardViewSet,
+                          TagInBoardViewSet)
 from cards.views import (CardViewSet, ParticipantInCardViewSet,
                          FileInCardViewSet, TagInCardViewSet, CommentViewSet,
                          CheckListViewSet)
@@ -13,6 +14,12 @@ from lists.views import ListViewSet
 router = DefaultRouter()
 
 router.register('boards', BoardViewSet, basename='boards')
+router.register(r'boards/(?P<board_id>\d+)/participants',
+                ParticipantInBoardViewSet,
+                basename='participants')
+router.register(r'boards/(?P<board_id>\d+)/tags',
+                TagInBoardViewSet,
+                basename='tags')
 router.register(r'boards/(?P<board_id>\d+)/requests',
                 BoardRequestViewSet,
                 basename='requests')

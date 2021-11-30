@@ -2,7 +2,9 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
+from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .filters import BoardFilter
@@ -12,9 +14,10 @@ from .permissions import (IsAuthor, IsParticipant, IsStaff,
                           IsAuthorOrModeratorOrAdminDelParticipantsPutTags)
 from .serializers import (BoardListOrCreateSerializer, BoardSerializer,
                           ParticipantInBoardSerializer,
-                          SwitchModeratorSerializer)
-                          # SearchBoardSerializer, SearchCardSerializer)
+                          SwitchModeratorSerializer,
+                          SearchBoardSerializer, SearchCardSerializer)
 from .tag_serializer import TagSerializer
+from cards.models import Card
 
 
 class BoardViewSet(viewsets.ModelViewSet):
@@ -201,23 +204,23 @@ class TagInBoardViewSet(viewsets.GenericViewSet,
             return [IsAuthorOrModeratorOrAdminDelParticipantsPutTags()]
 
 
-# class SearchAPIView(APIView):
-#
-#     def get(self, request):
-#         name = request.GET.get('name', None)
-#         boards = Board.objects.filter(participants__id=self.request.user.id)
-#         cards = Card.objects.filter(
-#             list__board__participants__id=self.request.user.id)
-#
-#         if name:
-#             boards = boards.filter(name__icontains=name)
-#             cards = cards.filter(name__icontains=name)
-#
-#             return JsonResponse({
-#                 'boards': SearchBoardSerializer(instance=boards,
-#                                                 many=True).data,
-#                 'cards': SearchCardSerializer(instance=cards,
-#                                               many=True).data
-#             })
-#
-#         return JsonResponse({'boards': [], 'cards': []})
+class SearchAPIView(APIView):
+
+    def get(self, request):
+        name = request.GET.get('name', None)
+        boards = Board.objects.filter(participants__id=self.request.user.id)
+        cards = Card.objects.filter(
+            list__board__participants__id=self.request.user.id)
+
+        if name:
+            boards = boards.filter(name__icontains=name)
+            cards = cards.filter(name__icontains=name)
+
+            return JsonResponse({
+                'boards': SearchBoardSerializer(instance=boards,
+                                                many=True).data,
+                'cards': SearchCardSerializer(instance=cards,
+                                              many=True).data
+            })
+
+        return JsonResponse({'boards': [], 'cards': []})

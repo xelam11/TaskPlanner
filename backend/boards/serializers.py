@@ -3,6 +3,8 @@ from rest_framework import serializers
 
 from .models import Board, Favorite, ParticipantInBoard
 from .tag_serializer import TagSerializer
+from cards.models import Card
+from lists.models import List
 from lists.serializers import ListSerializer
 from users.serializers import CustomUserSerializer
 
@@ -106,3 +108,28 @@ class SwitchModeratorSerializer(serializers.Serializer):
             })
 
         return id_
+
+
+class SearchBoardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Board
+        fields = ('id', 'name', 'avatar')
+
+
+class SearchListSerializer(serializers.ModelSerializer):
+    board = SearchBoardSerializer(read_only=True)
+
+    class Meta:
+        model = List
+        fields = ('id', 'name', 'board')
+        read_only_fields = ('board', )
+
+
+class SearchCardSerializer(serializers.ModelSerializer):
+    list = SearchListSerializer(read_only=True)
+
+    class Meta:
+        model = Card
+        fields = ('id', 'name', 'list', 'participants', 'files', 'comments',
+                  'check_lists')

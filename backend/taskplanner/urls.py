@@ -3,7 +3,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from boards.views import (BoardViewSet, ParticipantInBoardViewSet,
-                          TagInBoardViewSet)
+                          TagInBoardViewSet, SearchAPIView)
 from cards.views import (CardViewSet, ParticipantInCardViewSet,
                          FileInCardViewSet, TagInCardViewSet, CommentViewSet,
                          CheckListViewSet)
@@ -45,6 +45,6 @@ router.register(r'cards/(?P<card_id>\d+)/check-lists',
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('users.urls')),
-    # path('v1/search/', SearchAPIView.as_view(), name='search'),
+    path('api/v1/search/', SearchAPIView.as_view(), name='search'),
     path('api/v1/', include(router.urls)),
 ]
